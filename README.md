@@ -1,2 +1,0 @@
-# abdullaherzin
-personel web site
