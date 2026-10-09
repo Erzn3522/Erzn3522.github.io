@@ -1,6 +1,6 @@
 ---
 // Schematic: a fruit cluster seen from the camera. Larger = nearer.
-// Numbers are the picking sequence, frontmost first.
+// Numbers are a picking order starting with the nearest fruit.
 interface Props { compact?: boolean }
 const { compact = false } = Astro.props;
 
@@ -28,7 +28,6 @@ const drawOrder = [...fruit].sort((a, b) => b.z - a.z);
   {!compact && (
     <g>
       <text x="430" y="300">1 is nearest.</text>
-      <text x="430" y="326" class="d-sub">Rescan after each pick.</text>
     </g>
   )}
 </svg>

@@ -8,34 +8,26 @@ tags:
   - Object detection
   - Depth estimation
   - Picking logic
-  - Linux fleet deployment
+  - Field deployment
 figure:
   diagram: pick-order
-  caption: Schematic, not robot data. A fruit cluster as the camera sees it; larger circles are nearer. The numbers are the picking order, frontmost first, with a rescan after each pick.
+  caption: Schematic, not robot data. A fruit cluster as the camera sees it; larger circles are nearer. The numbers show a picking order that starts with the nearest fruit.
 ---
 
-<!-- Confidential employer work: describe method and outcome at CV level only. No real imagery. -->
+<!-- Confidential employer work: kept deliberately general (approved by Abdullah). No real imagery. -->
 
 ## Problem
 
-Autonomous harvesting robots with several arms pick apples and oranges. When I took the system over, it was not operational. Fruit grows in clusters, so a pick can damage the fruit next to it, and the same fruit can be targeted twice.
+Autonomous harvesting robots with several arms pick apples and oranges. When I took the system over, it was not operational. Fruit grows in clusters, so the hard part is picking one fruit without disturbing the ones around it.
 
 ## Approach
 
-I owned the pipeline end to end: camera calibration, object detection, depth estimation and picking logic.
+I owned the pipeline end to end, from the camera to the picking decision: camera calibration, object detection, depth estimation and picking logic. The picking logic decides which fruit to pick next and coordinates the arms so they can work through a cluster safely.
 
-- **Picking logic for clusters.** Dual-arm coordination, frontmost-first picking with rescans, and re-identification of each fruit by diameter and position, so no fruit is picked twice and its neighbours are left intact.
-- **Production deployment on the Intel NUC fleet.** Automated Ubuntu image builds (autoinstall and post-install provisioning), systemd service management, remote deployment and log collection, and Linux camera driver debugging.
-- **Development without hardware.** A robot simulation mode and field-log replay tools.
+I also owned getting the software onto the robots and keeping it running in the field: automated installation, remote updates and log collection across the fleet, and tools to develop and test the pipeline without a robot.
 
 Calibration and depth/detection have their own pages: [camera-to-arm calibration](/projects/camera-to-arm-calibration) and [depth and detection for clustered fruit](/projects/detection-pipeline).
 
 ## Result
 
 The system went from non-operational to field-ready. I was the responsible computer vision engineer during its field deployments in five countries.
-
-## What I would do next
-
-<!-- TODO(abdullah): this section is a draft written from the CV. Confirm or rewrite. -->
-
-Turn the field-log replay tools into a regression suite, so every change to detection or picking logic is scored against recorded field runs before it reaches a robot.
