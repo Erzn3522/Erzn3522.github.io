@@ -32,9 +32,3 @@ The robot measures fruit depth with an Intel RealSense D435. Taking the peak of 
 Less systematic overestimation of fruit depth, fewer overexposed infrared and depth frames, and better detection of partially visible fruit.
 
 <!-- TODO(abdullah): add a number for any of these if one can be shared. -->
-
-## What I would do next
-
-<!-- TODO(abdullah): this section is a draft written from the CV. Confirm or rewrite. -->
-
-Measure each change on a held-out set of field recordings with known distances, so the improvements can be stated as numbers.
