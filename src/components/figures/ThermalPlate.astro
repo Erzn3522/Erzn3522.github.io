@@ -1,0 +1,42 @@
+---
+// Schematic: a plate seen from the thermal camera, with four subsurface cracks.
+// Deeper cracks look softer and fainter at the surface. Same layout as the
+// interactive thermal figure (src/lib/thermal.ts).
+import { CRACKS, PLATE, depthText } from '../../lib/thermal';
+
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const ox = 40;
+const oy = 20;
+const k = 560 / PLATE.w; // plate fills 560 x 420 → scaled into the 640 x 400 box below
+const s = 360 / PLATE.h;
+const sc = Math.min(k, s);
+const w = PLATE.w * sc;
+const h = PLATE.h * sc;
+const x0 = (640 - w) / 2;
+const y0 = (400 - h) / 2;
+const X = (mm: number) => x0 + mm * sc;
+const Y = (mm: number) => y0 + mm * sc;
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Schematic of a plate seen from the thermal camera, with four hidden cracks at 0.4, 0.8, 1.2 and 1.8 mm depth. Deeper cracks appear softer and fainter at the surface.">
+  <rect class="d-ground" width="640" height="400" />
+  <rect x={x0} y={y0} width={w} height={h} class="d-board-fill d-ink" stroke-width="2" />
+  {CRACKS.map((c) => (
+    <g>
+      <path
+        d={`M${X(c.x1)} ${Y(c.y1)}L${X(c.x2)} ${Y(c.y2)}`}
+        class="d-ink"
+        stroke-width={6 + c.depth * 8}
+        stroke-opacity={0.9 - c.depth * 0.32}
+        stroke-linecap="round"
+      />
+      {!compact && (
+        <text x={X(Math.min(c.x1, c.x2)) - 6} y={Y(Math.min(c.y1, c.y2)) - 14} class="d-leaf-text">
+          {depthText(c.depth)}
+        </text>
+      )}
+    </g>
+  ))}
+</svg>

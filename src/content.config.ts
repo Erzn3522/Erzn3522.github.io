@@ -11,10 +11,12 @@ const projects = defineCollection({
     employer: z.string(),
     period: z.string(),
     tags: z.array(z.string()),
+    // Replaces the static figure with an interactive one on the project page
+    interactive: z.enum(['thermal']).optional(),
     figure: z
       .object({
         diagram: z
-          .enum(['calibration-target', 'depth-histogram', 'pick-order', 'occupancy-grid', 'depth-profile'])
+          .enum(['calibration-target', 'depth-histogram', 'pick-order', 'occupancy-grid', 'depth-profile', 'thermal-plate'])
           .optional(),
         caption: z.string(),
       })

@@ -2,6 +2,7 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Diagram from '../../components/Diagram.astro';
+import ThermalScene from '../../components/ThermalScene.astro';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
@@ -19,7 +20,7 @@ interface Props {
 
 const { project, prev, next } = Astro.props;
 const { Content } = await render(project);
-const { title, outcome, employer, period, tags, figure } = project.data;
+const { title, outcome, employer, period, tags, figure, interactive } = project.data;
 ---
 
 <Base title={title} description={outcome}>
@@ -44,12 +45,16 @@ const { title, outcome, employer, period, tags, figure } = project.data;
         <h1>{title}</h1>
         <p class="outcome">{outcome}</p>
 
-        <figure class="figure">
-          <div class="figure-frame">
-            <Diagram name={figure?.diagram} />
-          </div>
-          {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
-        </figure>
+        {interactive === 'thermal' ? (
+          <ThermalScene caption={figure?.caption} />
+        ) : (
+          <figure class="figure">
+            <div class="figure-frame">
+              <Diagram name={figure?.diagram} />
+            </div>
+            {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
+          </figure>
+        )}
 
         {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
 

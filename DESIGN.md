@@ -170,3 +170,11 @@ I checked each decision against "what would I produce for any developer portfoli
 3. **Pass 3.** Figure text dropped to ~9px at 390px; figures were oversized at 1440px; "2023 – 2023" on a one-year role; screen readers heard the employer before the project title. → 22px figure text under 600px with labels moved inward; figures capped at 48rem; single-year periods collapse; title first in the DOM, visual order kept with grid.
 4. **Performance.** Lighthouse mobile on home was 91. → Source Serif switched from the `opsz` files (122 KB) to `wght` (51 KB), italic file dropped, CSS inlined, the two Latin font files preloaded. Home now 98 / 100 / 100 / 100; project pages 100 across.
 5. **Removed one accessory.** The footer line "No analytics, no cookies." announced the quality floor instead of just having it.
+
+## Addition: thermal NDT project (requested by Abdullah)
+
+A sixth project page with a second interactive figure, built like the hero: a synthetic PLA plate after a flash, thermal frame left of the divider, Fourier phase image right of it, a time slider, and two charts (cooling curves, contrast over each crack). This departs from the brief's "one memorable thing" on request; on the home page it stays a quiet row with a static schematic.
+
+- The thermal frame uses an iron palette (black → purple → orange → white), a different colormap from the hero's depth map, so the brief's rule that the depth colormap appears only in the hero still holds.
+- The model is physical but simplified: 1D flash heating (surface cools as 1/√t), reflection from a crack at depth L appearing from t ≈ L²/α, lateral washout, multiplicative uneven lamp heating that the phase removes. The Fourier transform is linear in the crack weights, so the phase image is computed in one pass per pixel.
+- Phase is shown as magnitude on a log scale above the noise floor, because the sign of the phase shift can flip with depth at a fixed frequency.

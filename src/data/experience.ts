@@ -64,6 +64,7 @@ export const experience: Role[] = [
     place: 'Kocaeli, Turkey',
     summary:
       'Machine vision applications in Halcon and C# with MSSQL-backed desktop tools, commissioned on site. Led a TUBITAK-funded thermal NDT research project that estimated the depth of subsurface defects in PLA parts.',
+    projects: ['thermal-ndt'],
   },
   {
     start: 'Jul 2020',

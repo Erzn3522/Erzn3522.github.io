@@ -1,0 +1,343 @@
+---
+import ThermalPlate from './figures/ThermalPlate.astro';
+import {
+  CRACKS,
+  T_MIN,
+  T_MAX,
+  base,
+  contrast,
+  crackCurve,
+  depthText,
+  sliderAt,
+  ironGradient,
+} from '../lib/thermal';
+
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+
+const T0 = 8; // default time, s
+
+// ---------- chart geometry (shared by both panels) ----------
+const VW = 320;
+const VH = 220;
+const X0 = 46;
+const X1 = 306;
+const Y0 = 18;
+const Y1 = 178;
+const lx = (t: number) => X0 + ((Math.log10(t) - Math.log10(T_MIN)) / (Math.log10(T_MAX) - Math.log10(T_MIN))) * (X1 - X0);
+const ts = Array.from({ length: 140 }, (_, i) => T_MIN * (T_MAX / T_MIN) ** (i / 139));
+const path = (fn: (t: number) => number, y: (v: number) => number) =>
+  ts.map((t, i) => `${i ? 'L' : 'M'}${lx(t).toFixed(1)} ${y(fn(t)).toFixed(1)}`).join('');
+const timeTicks = [0.3, 1, 3, 10, 30, 100];
+
+// Panel A: cooling curves, log–log
+const TA0 = 0.08;
+const TA1 = 2.4;
+const ya = (v: number) => Y1 - ((Math.log10(v) - Math.log10(TA0)) / (Math.log10(TA1) - Math.log10(TA0))) * (Y1 - Y0);
+const soundPath = path(base, ya);
+const crackPathsA = CRACKS.map((c) => path((t) => crackCurve(c.depth, t), ya));
+const tempTicks = [0.1, 0.3, 1];
+
+// Panel B: thermal contrast over each crack
+const peaks = CRACKS.map((c) => {
+  let best = { t: T_MIN, v: 0 };
+  for (const t of ts) {
+    const v = contrast(c.depth, t);
+    if (v > best.v) best = { t, v };
+  }
+  return best;
+});
+const CB1 = Math.ceil((Math.max(...peaks.map((p) => p.v)) * 1.15) / 0.1) * 0.1;
+const yb = (v: number) => Y1 - (v / CB1) * (Y1 - Y0);
+const crackPathsB = CRACKS.map((c) => path((t) => contrast(c.depth, t), yb));
+const contrastTicks = Array.from({ length: Math.round(CB1 / 0.1) + 1 }, (_, i) => +(i * 0.1).toFixed(1)).filter(
+  (_, i, a) => a.length <= 6 || i % 2 === 0,
+);
+
+const label =
+  'Synthetic thermal test of a plastic plate with four hidden cracks. Left of the divider: the thermal camera frame at the selected time after the flash. Right: the Fourier phase image, where all four cracks stand out and the uneven lamp heating disappears.';
+const chartData = JSON.stringify({ VW, VH, X0, X1, Y0, Y1, TA0, TA1, CB1 });
+---
+
+<figure class="thermal" data-thermal data-chart={chartData}>
+  <div class="static" data-static>
+    <div class="static-frame"><ThermalPlate /></div>
+  </div>
+
+  <div class="live" data-live hidden>
+    <div class="frame" data-frame>
+      <canvas data-canvas role="img" aria-label={label}></canvas>
+      <span class="tag tag-left" aria-hidden="true">Thermal camera</span>
+      <span class="tag tag-right" aria-hidden="true">Phase image</span>
+      <label class="visually-hidden" for="thermal-divider">Divider between thermal frame and phase image</label>
+      <input id="thermal-divider" class="visually-hidden" data-divider type="range" min="0" max="100" step="1" value="50" aria-valuetext="Divider at 50%" />
+    </div>
+    <div class="time">
+      <label for="thermal-time">Time after the flash</label>
+      <input id="thermal-time" data-time type="range" min="0" max="100" step="0.5" value={sliderAt(T0).toFixed(1)} />
+      <output for="thermal-time" data-time-out>{T0.toFixed(1)} s</output>
+    </div>
+    <div class="legend note" aria-hidden="true">
+      <span class="legend-bar" style={`background:${ironGradient()}`}></span>
+      <span class="legend-ends"><span>cooler</span><span>warmer (rescaled every frame)</span></span>
+    </div>
+  </div>
+
+  <div class="charts">
+    <svg class="chart" viewBox={`0 0 ${VW} ${VH}`} role="img" aria-labelledby="chart-a-title">
+      <title id="chart-a-title">Cooling curves on log–log axes. The sound area cools along a straight line. Over each crack the curve bends upward, later for deeper cracks.</title>
+      <text x={X0} y="11" class="c-title">Cooling curves</text>
+      {tempTicks.map((v) => (
+        <g>
+          <path d={`M${X0} ${ya(v)}H${X1}`} class="c-grid" />
+          <text x={X0 - 6} y={ya(v) + 4} text-anchor="end">{v}</text>
+        </g>
+      ))}
+      {timeTicks.map((t) => (
+        <text x={lx(t)} y={Y1 + 16} text-anchor="middle">{t}</text>
+      ))}
+      <text x={(X0 + X1) / 2} y={VH - 4} text-anchor="middle" class="c-sub">time after the flash (s)</text>
+      <path d={`M${X0} ${Y0}V${Y1}H${X1}`} class="c-axis" />
+      {crackPathsA.map((d) => <path d={d} class="c-crack" />)}
+      <path d={soundPath} class="c-sound" />
+      <path d="" class="c-pointer" data-pointer-a />
+      <path d={`M${lx(T0)} ${Y0}V${Y1}`} class="c-time" data-tmark />
+      <g class="c-key">
+        <path d={`M${X1 - 92} 30h18`} class="c-sound" /><text x={X1 - 70} y="34">sound area</text>
+        <path d={`M${X1 - 92} 46h18`} class="c-crack" /><text x={X1 - 70} y="50">over a crack</text>
+      </g>
+    </svg>
+
+    <svg class="chart" viewBox={`0 0 ${VW} ${VH}`} role="img" aria-labelledby="chart-b-title">
+      <title id="chart-b-title">Thermal contrast over each crack against time. The 0.4 mm crack peaks first; each deeper crack peaks later and lower. The peak time grows with the square of the depth.</title>
+      <text x={X0} y="11" class="c-title">Contrast over each crack</text>
+      {contrastTicks.map((v) => (
+        <g>
+          <path d={`M${X0} ${yb(v)}H${X1}`} class="c-grid" />
+          <text x={X0 - 6} y={yb(v) + 4} text-anchor="end">{Math.round(v * 100)}%</text>
+        </g>
+      ))}
+      {timeTicks.map((t) => (
+        <text x={lx(t)} y={Y1 + 16} text-anchor="middle">{t}</text>
+      ))}
+      <text x={(X0 + X1) / 2} y={VH - 4} text-anchor="middle" class="c-sub">time after the flash (s)</text>
+      <path d={`M${X0} ${Y0}V${Y1}H${X1}`} class="c-axis" />
+      {crackPathsB.map((d) => <path d={d} class="c-crack" />)}
+      {peaks.map((p, i) => (
+        <g>
+          <circle cx={lx(p.t)} cy={yb(p.v)} r="3" class="c-dot" />
+          <text x={lx(p.t)} y={yb(p.v) - 8} text-anchor={lx(p.t) > X1 - 30 ? 'end' : 'middle'} class="c-label">{depthText(CRACKS[i].depth)}</text>
+        </g>
+      ))}
+      <path d="" class="c-pointer" data-pointer-b />
+      <path d={`M${lx(T0)} ${Y0}V${Y1}`} class="c-time" data-tmark />
+    </svg>
+  </div>
+
+  <figcaption class="note">
+    {caption}
+    <span class="live-only" hidden> Drag across the plate to compare the two views and to plot the cooling curve under the pointer (dark line). Move the time slider to watch the plate cool.</span>
+  </figcaption>
+</figure>
+
+<script>
+  import { initThermal } from '../scripts/thermal';
+  document.querySelectorAll<HTMLElement>('[data-thermal]').forEach(initThermal);
+</script>
+
+<style>
+  .thermal {
+    margin: var(--space-4) 0 var(--space-5);
+    max-width: 48rem;
+  }
+
+  .static-frame {
+    border: 1px solid var(--rule);
+    padding: var(--space-2);
+  }
+
+  .live[hidden],
+  .static[hidden],
+  .live-only[hidden] {
+    display: none;
+  }
+
+  .frame {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #0c0622;
+    touch-action: pan-y;
+    cursor: ew-resize;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .frame:has(input:focus-visible) {
+    outline: 2px solid var(--leaf);
+    outline-offset: 3px;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .tag {
+    position: absolute;
+    top: 10px;
+    padding: 0.15rem 0.5rem;
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #17262f;
+    background: rgb(232 236 233 / 0.92);
+    pointer-events: none;
+  }
+
+  .tag-left {
+    left: 10px;
+  }
+
+  .tag-right {
+    right: 10px;
+  }
+
+  .time {
+    display: grid;
+    grid-template-columns: auto 1fr 4.5em;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    font-family: var(--font-head);
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .time input {
+    width: 100%;
+    accent-color: var(--leaf);
+    min-height: 44px;
+  }
+
+  .time output {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  @media (max-width: 520px) {
+    .time {
+      grid-template-columns: 1fr auto;
+    }
+    .time input {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+
+  .legend {
+    max-width: 420px;
+  }
+
+  .legend-bar {
+    display: block;
+    height: 10px;
+  }
+
+  .legend-ends {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 0.78rem;
+  }
+
+  .charts {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+
+  @media (min-width: 700px) {
+    .charts {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .chart text {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chart path {
+    fill: none;
+  }
+
+  .chart .c-title {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--ink);
+  }
+
+  .chart .c-label {
+    font-weight: 600;
+    fill: var(--leaf);
+  }
+
+  .c-grid {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+
+  .c-axis {
+    stroke: var(--mute);
+    stroke-width: 1;
+  }
+
+  .c-sound {
+    stroke: var(--mute);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+  }
+
+  .c-crack {
+    stroke: var(--leaf);
+    stroke-width: 2;
+  }
+
+  .c-dot {
+    fill: var(--leaf);
+  }
+
+  .c-pointer {
+    stroke: var(--ink);
+    stroke-width: 2.5;
+  }
+
+  .c-time {
+    stroke: var(--ink);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+
+  figcaption {
+    margin-top: var(--space-3);
+    max-width: 70ch;
+    font-size: 0.95rem;
+  }
+</style>

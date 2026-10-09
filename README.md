@@ -42,6 +42,7 @@ Writes `/` and one project page at 1440, 768 and 390 px to `./shots/`, in light,
 | `src/lib/scene.ts` | Seeded stereo orchard scene: geometry, disparity, colormap, canvas and SVG drawing |
 | `src/scripts/hero.ts` | Interactive canvas (divider, boxes, keyboard, reduced motion) |
 | `src/components/HeroScene.astro` | Hero figure: SVG fallback, canvas, caption, legend |
+| `src/lib/thermal.ts`, `src/scripts/thermal.ts`, `src/components/ThermalScene.astro` | Interactive flash-thermography figure on the thermal NDT page |
 | `src/content/projects/*.md` | Project pages (frontmatter: title, outcome, order, employer, period, tags, figure) |
 | `src/components/figures/` | Schematic SVG figures, one per project |
 | `src/data/experience.ts` | Timeline, education, skills |
@@ -85,5 +86,6 @@ Search the source for `TODO(abdullah)` to find each one in place.
 5. **AR face filter side project** (CV, Projects section). Not on the site. Add as a sixth project?
 6. **Contact email subject.** The mailto subject is "Hello from erzn3522.github.io". Change it if you prefer.
 7. **Custom domain later?** Not needed for launch.
+8. **Thermal NDT page.** Written from the CV plus your description (Halcon and C#, Fourier transform of cooling curves, crack detection). Confirm the method wording, and add a number if you have one.
 
 Answered by the CV: location (1), Robsys end date (2), Robsys listed once (3), "Pek Automotive" spelling (4).
