@@ -20,7 +20,7 @@ figure:
 
 ## Problem
 
-A crack under the surface of a part is invisible to a normal camera, and cutting the part open destroys it. This TUBITAK-funded research project set out to find defects inside PLA parts without damaging them, and to say how deep each one is.
+A crack under the surface of a part is invisible to a normal camera, and cutting the part open destroys it. This research project set out to find defects inside PLA parts without damaging them, and to say how deep each one is.
 
 ## Approach
 
