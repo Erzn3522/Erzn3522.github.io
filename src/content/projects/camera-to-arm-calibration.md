@@ -33,9 +33,3 @@ Around the fit, the routine rejects outliers, validates the result with R², and
 ## Result
 
 5 mm maximum positional error with a 2 mm standard deviation, against the 10 mm production threshold. The manual procedure is gone.
-
-## What I would do next
-
-<!-- TODO(abdullah): this section is a draft written from the CV. Confirm or rewrite. -->
-
-Log every calibration result with its R² across the fleet, so drift over a season shows up before it affects picking.
