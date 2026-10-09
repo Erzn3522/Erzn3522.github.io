@@ -1,0 +1,153 @@
+---
+import { buildScene, sceneSVG, legendGradient, depthT, Z_NEAR, Z_FAR } from '../lib/scene';
+
+const scene = buildScene();
+const label = `Synthetic orchard scene with ${scene.apples.length} apples. Left half: the camera view, with dashed outlines where the right camera sees each apple. Right half: the depth map, near in red and far in blue. Each apple has a bounding box labelled with its depth in meters.`;
+const svg = sceneSVG(scene, label);
+
+// Legend ticks at real depths, positioned on the inverse-depth scale (near on the left)
+const ticks = [1, 1.5, 2, 3, Z_FAR].map((z) => ({
+  z,
+  left: `${((1 - depthT(z)) * 100).toFixed(1)}%`,
+}));
+---
+
+<figure class="scene" data-scene>
+  <div class="frame" data-frame>
+    <div class="fallback" data-fallback set:html={svg} />
+    <canvas data-canvas hidden role="img" aria-label={label}></canvas>
+    <span class="tag tag-left" aria-hidden="true">Camera view</span>
+    <span class="tag tag-right" aria-hidden="true">Depth map</span>
+    <label class="visually-hidden" for="divider">Divider between camera view and depth map</label>
+    <input
+      id="divider"
+      class="visually-hidden"
+      data-slider
+      type="range"
+      min="0"
+      max="100"
+      step="1"
+      value="50"
+      aria-valuetext="Divider at 50%"
+      hidden
+    />
+  </div>
+  <figcaption>
+    <p>Synthetic scene. Drag to compare the camera view with the depth map.</p>
+    <p class="note">
+      Dashed outlines show where the right camera sees each apple. Nearer apples shift more: the
+      shift is the disparity <i>d</i>&nbsp;=&nbsp;<i>f</i>·<i>B</i>&nbsp;/&nbsp;<i>Z</i>.
+    </p>
+    <div class="legend note" aria-hidden="true">
+      <span class="legend-bar" style={`background:${legendGradient()}`}></span>
+      <span class="legend-ticks">
+        {ticks.map((t) => <span style={`left:${t.left}`}>{t.z} m</span>)}
+      </span>
+    </div>
+  </figcaption>
+</figure>
+
+<script>
+  import { initHero } from '../scripts/hero';
+  document.querySelectorAll<HTMLElement>('[data-scene]').forEach(initHero);
+</script>
+
+<style>
+  .scene {
+    margin: 0;
+  }
+
+  .frame {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #0b1026;
+    touch-action: pan-y;
+    cursor: ew-resize;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .frame:has(input:focus-visible) {
+    outline: 2px solid var(--leaf);
+    outline-offset: 3px;
+  }
+
+  .fallback,
+  .fallback :global(svg),
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  canvas[hidden],
+  .fallback[hidden] {
+    display: none;
+  }
+
+  .tag {
+    position: absolute;
+    top: 10px;
+    padding: 0.15rem 0.5rem;
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #17262f;
+    background: rgb(232 236 233 / 0.92);
+    pointer-events: none;
+  }
+
+  .tag-left {
+    left: 10px;
+  }
+
+  .tag-right {
+    right: 10px;
+  }
+
+  figcaption {
+    margin-top: var(--space-2);
+    max-width: 60ch;
+  }
+
+  figcaption > p:first-child {
+    font-size: var(--step-0);
+  }
+
+  figcaption .note {
+    margin-top: 0.35rem;
+  }
+
+  .legend {
+    margin-top: var(--space-2);
+    max-width: 420px;
+  }
+
+  .legend-bar {
+    display: block;
+    height: 10px;
+  }
+
+  .legend-ticks {
+    position: relative;
+    display: block;
+    height: 1.6em;
+    margin-top: 4px;
+    font-size: 0.78rem;
+  }
+
+  .legend-ticks span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .legend-ticks span:last-child {
+    transform: translateX(-100%);
+  }
+</style>
