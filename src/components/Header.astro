@@ -1,0 +1,123 @@
+---
+import { site } from '../lib/site';
+
+const nav = [
+  { label: 'Work', href: '/#work' },
+  { label: 'Experience', href: '/#experience' },
+  { label: 'About', href: '/#about' },
+  { label: 'Contact', href: '/#contact' },
+];
+---
+
+<header class="site-header wrap">
+  <a class="name" href="/">{site.name}</a>
+  <nav aria-label="Main">
+    <ul>
+      {nav.map((item) => (
+        <li><a href={item.href}>{item.label}</a></li>
+      ))}
+    </ul>
+  </nav>
+  <button class="theme" type="button" data-theme-toggle hidden>
+    <span data-theme-label>Dark theme</span>
+  </button>
+</header>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const label = document.querySelector<HTMLElement>('[data-theme-label]');
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const current = () => root.dataset.theme ?? (media.matches ? 'dark' : 'light');
+
+  function render() {
+    if (!button || !label) return;
+    const next = current() === 'dark' ? 'light' : 'dark';
+    label.textContent = next === 'dark' ? 'Dark theme' : 'Light theme';
+    button.setAttribute('aria-label', `Switch to ${next} theme`);
+  }
+
+  if (button) {
+    button.hidden = false;
+    button.addEventListener('click', () => {
+      const next = current() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {
+        // Storage blocked: the choice lasts for this page view only.
+      }
+      render();
+      window.dispatchEvent(new CustomEvent('themechange'));
+    });
+    media.addEventListener('change', render);
+    render();
+  }
+</script>
+
+<style>
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding-block: var(--space-3);
+  }
+
+  .name {
+    font-family: var(--font-head);
+    font-stretch: 112%;
+    font-weight: 700;
+    font-size: var(--step-1);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  nav a,
+  .theme {
+    font-family: var(--font-head);
+    font-size: var(--step--1);
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  nav a {
+    text-decoration: none;
+    display: inline-block;
+    padding-block: 0.4rem;
+  }
+
+  nav a:hover {
+    text-decoration: underline;
+  }
+
+  .theme {
+    background: none;
+    border: 1px solid var(--rule);
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .theme:hover {
+    border-color: var(--ink);
+  }
+
+  @media (max-width: 640px) {
+    nav {
+      order: 3;
+      width: 100%;
+    }
+  }
+</style>
