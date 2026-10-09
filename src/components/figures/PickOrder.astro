@@ -1,0 +1,34 @@
+---
+// Schematic: a fruit cluster seen from the camera. Larger = nearer.
+// Numbers are the picking sequence, frontmost first.
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const fruit = [
+  { x: 300, y: 214, r: 58, z: 1 },
+  { x: 404, y: 178, r: 50, z: 2 },
+  { x: 214, y: 150, r: 46, z: 3 },
+  { x: 352, y: 300, r: 42, z: 4 },
+  { x: 236, y: 280, r: 38, z: 5 },
+  { x: 318, y: 110, r: 34, z: 6 },
+];
+// Draw far to near so the nearest fruit overlaps the rest
+const drawOrder = [...fruit].sort((a, b) => b.z - a.z);
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Schematic of a fruit cluster seen from the camera. Six fruits overlap; larger ones are nearer. They are numbered 1 to 6 in picking order, frontmost first.">
+  <rect class="d-ground" width="640" height="400" />
+  <path class="d-mute" d="M300 20C300 60 310 90 318 110M318 110C330 140 380 150 404 178" fill="none" stroke-width="3" />
+  {drawOrder.map((f) => (
+    <g>
+      <circle cx={f.x} cy={f.y} r={f.r} class="d-board-fill d-ink" stroke-width="2.5" />
+      <text x={f.x} y={f.y + 9} text-anchor="middle" class="d-num">{f.z}</text>
+    </g>
+  ))}
+  {!compact && (
+    <g>
+      <text x="430" y="300">1 is nearest.</text>
+      <text x="430" y="326" class="d-sub">Rescan after each pick.</text>
+    </g>
+  )}
+</svg>

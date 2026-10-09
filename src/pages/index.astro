@@ -1,0 +1,424 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import HeroScene from '../components/HeroScene.astro';
+import Diagram from '../components/Diagram.astro';
+import { site, mailto } from '../lib/site';
+import { experience, education, skills } from '../data/experience';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const titleOf = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
+// "May 2023 – Dec 2023" → "2023"; "Apr 2025 – present" → "2025 – present"
+const years = (period: string) => {
+  const [a, b] = period.replace(/[A-Z][a-z]{2} /g, '').split(' – ');
+  return a === b ? a : `${a} – ${b}`;
+};
+---
+
+<Base>
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <div class="hero-text">
+      <h1 id="hero-title">Computer vision for robots that work outdoors.</h1>
+      <p class="hero-sub">
+        I build stereo vision and detection systems for agricultural and mobile robots. Currently at
+        Pek Automotive in Slovenia.
+      </p>
+      <p class="hero-actions">
+        <a class="button button-primary" href="#work">View projects</a>
+        <a class="button" href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV</a>
+      </p>
+    </div>
+    <div class="hero-scene">
+      <HeroScene />
+    </div>
+  </section>
+
+  <section id="work" class="section wrap" aria-labelledby="work-title">
+    <div class="split">
+      <h2 id="work-title" class="content section-title">Selected work</h2>
+    </div>
+    <ul class="work-list" role="list">
+      {projects.map((p) => (
+        <li>
+          <a class="work-row" href={`/projects/${p.id}`}>
+            {/* Title first in the DOM so it leads the link's accessible name */}
+            <span class="work-text">
+              <span class="work-title">{p.data.title}</span>
+              <span class="work-outcome">{p.data.outcome}</span>
+            </span>
+            <span class="work-meta note">
+              {p.data.employer}
+              <br />
+              {years(p.data.period)}
+            </span>
+            <span class="work-thumb" aria-hidden="true">
+              <Diagram name={p.data.figure?.diagram} compact />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section id="experience" class="section wrap" aria-labelledby="experience-title">
+    <div class="split">
+      <h2 id="experience-title" class="content section-title">Experience</h2>
+    </div>
+    <ol class="timeline" role="list">
+      {experience.map((r) => (
+        <li class="split">
+          <p class="margin note dates">
+            <span>{r.start} –</span>
+            <span>{r.end}</span>
+          </p>
+          <div class="content entry">
+            <h3>{r.role}, {r.org}</h3>
+            <p class="note">{r.place}</p>
+            <p class="entry-summary">{r.summary}</p>
+            {r.projects && (
+              <p class="entry-links">
+                {r.projects.length > 1 ? 'Projects: ' : 'Project: '}
+                {r.projects.map((slug, i) => (
+                  <>
+                    <a href={`/projects/${slug}`}>{titleOf[slug]}</a>
+                    {i < r.projects!.length - 1 ? ', ' : ''}
+                  </>
+                ))}
+              </p>
+            )}
+          </div>
+        </li>
+      ))}
+    </ol>
+    <div class="split education">
+      <p class="margin note dates"><span>Graduated</span><span>{education.date}</span></p>
+      <div class="content">
+        <h3>{education.degree}, {education.school}</h3>
+        <p class="note">{education.place}</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="section wrap" aria-labelledby="about-title">
+    <div class="split">
+      <h2 id="about-title" class="content section-title">About</h2>
+      <div class="content prose">
+        <p>
+          I am a computer vision engineer with about five years in robotics and machine vision. Most
+          of my work sits between the camera and the robot: camera calibration, stereo depth, 3D
+          coordinate transforms, and real-time detection on edge hardware such as NVIDIA Jetson and
+          Intel RealSense. I build production pipelines in Python and C++ and stay with them from the
+          algorithm to field deployment. Away from work I ride motorcycles and dive, as a 1-star
+          diver.
+        </p>
+      </div>
+      <dl class="content skills">
+        {skills.map((s) => (
+          <div>
+            <dt>{s.group}</dt>
+            <dd>{s.items}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section id="contact" class="section wrap" aria-labelledby="contact-title">
+    <div class="split">
+      <h2 id="contact-title" class="content section-title">Contact</h2>
+      <div class="content">
+        <p class="contact-lead">Email is the quickest way to reach me.</p>
+        <p><a class="contact-email" href={mailto}>{site.email}</a></p>
+        <ul class="contact-links" role="list">
+          <li><a href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV (PDF)</a></li>
+          {site.links.map((l) => (
+            <li><a href={l.href} rel="me">{l.label}</a></li>
+          ))}
+        </ul>
+        <p class="note">Based in {site.location}.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid;
+    gap: var(--space-4) var(--gutter);
+    padding-block: var(--space-3) var(--space-5);
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 1.3rem + 3.6vw, var(--step-5));
+    line-height: 1.04;
+    max-width: 14ch;
+  }
+
+  .hero-sub {
+    margin-top: var(--space-3);
+    font-size: var(--step-1);
+    line-height: 1.5;
+    max-width: 34ch;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: var(--space-4);
+  }
+
+  @media (min-width: 1000px) {
+    .hero {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
+      padding-top: var(--space-4);
+    }
+    .hero-text {
+      grid-column: 1 / span 5;
+      padding-top: var(--space-2);
+    }
+    .hero-scene {
+      grid-column: 6 / -1;
+    }
+  }
+
+  /* ---------- Sections ---------- */
+  .section {
+    padding-block: var(--space-6) 0;
+  }
+
+  .section-title {
+    font-size: var(--step-4);
+    margin-bottom: var(--space-4);
+  }
+
+  /* ---------- Selected work ---------- */
+  .work-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .work-list li {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .work-row {
+    display: grid;
+    gap: var(--space-2) var(--gutter);
+    padding-block: var(--space-4);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .work-meta {
+    order: -1;
+  }
+
+  .work-title {
+    display: block;
+    font-family: var(--font-head);
+    font-stretch: 112%;
+    font-weight: 700;
+    font-size: var(--step-3);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .work-outcome {
+    display: block;
+    margin-top: var(--space-2);
+    max-width: 52ch;
+  }
+
+  .work-row:hover .work-title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.12em;
+  }
+
+  .work-thumb {
+    position: relative;
+    display: block;
+    max-width: 320px;
+    border: 1px solid var(--rule);
+  }
+
+  /* A detection box answers hover and focus */
+  .work-thumb::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 2px solid var(--detect);
+    opacity: 0;
+  }
+
+  .work-row:hover .work-thumb::after,
+  .work-row:focus-visible .work-thumb::after {
+    opacity: 1;
+  }
+
+  @media (min-width: 860px) {
+    .work-row {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
+    }
+    .work-meta {
+      grid-column: 1 / span 3;
+      grid-row: 1;
+      padding-top: 0.5rem;
+    }
+    .work-text {
+      grid-column: 4 / span 6;
+      grid-row: 1;
+    }
+    .work-thumb {
+      grid-column: 10 / -1;
+      grid-row: 1;
+      width: 100%;
+    }
+  }
+
+  /* ---------- Experience ---------- */
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.3em;
+    padding-top: 0.2rem;
+  }
+
+  .entry {
+    position: relative;
+    padding-bottom: var(--space-4);
+    max-width: 62ch;
+  }
+
+  .entry h3,
+  .education h3 {
+    font-size: var(--step-1);
+    line-height: 1.25;
+  }
+
+  .entry .note,
+  .education .note {
+    margin-top: 0.2rem;
+  }
+
+  .entry-summary {
+    margin-top: 0.6rem;
+  }
+
+  .entry-links {
+    margin-top: 0.5rem;
+    font-size: var(--step--1);
+    font-family: var(--font-head);
+    color: var(--mute);
+  }
+
+  @media (min-width: 860px) {
+    .dates {
+      flex-direction: column;
+    }
+    .timeline .entry {
+      padding-left: var(--space-3);
+      border-left: 1px solid var(--rule);
+    }
+    /* Square tick where each role starts */
+    .timeline .entry::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 0.55rem;
+      width: 9px;
+      height: 9px;
+      background: var(--ink);
+    }
+    .timeline li:last-child .entry {
+      padding-bottom: var(--space-3);
+    }
+    .education .content {
+      padding-left: var(--space-3);
+    }
+  }
+
+  @media (max-width: 859px) {
+    .timeline li + li {
+      border-top: 1px solid var(--rule);
+      padding-top: var(--space-3);
+    }
+  }
+
+  .education {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--rule);
+  }
+
+  /* ---------- About ---------- */
+  .skills {
+    margin: var(--space-4) 0 0;
+    max-width: var(--measure);
+  }
+
+  .skills div {
+    display: grid;
+    gap: 0.1rem var(--gutter);
+    padding-block: 0.7rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .skills dt {
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: var(--step--1);
+    padding-top: 0.2rem;
+  }
+
+  .skills dd {
+    margin: 0;
+  }
+
+  @media (min-width: 600px) {
+    .skills div {
+      grid-template-columns: 12rem 1fr;
+    }
+  }
+
+  /* ---------- Contact ---------- */
+  .contact-email {
+    display: inline-block;
+    margin-top: var(--space-2);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-stretch: 105%;
+    font-size: clamp(1.15rem, 0.8rem + 2vw, var(--step-3));
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.6rem;
+    list-style: none;
+    margin: var(--space-4) 0 var(--space-3);
+    padding: 0;
+    font-family: var(--font-head);
+    font-weight: 500;
+  }
+
+  .contact-links a {
+    display: inline-block;
+    padding-block: 0.35rem;
+  }
+</style>

@@ -1,0 +1,55 @@
+---
+// Schematic occupancy grid of a room with a planned path. Not robot data.
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const cols = 26;
+const rows = 16;
+const cell = 22;
+const ox = (640 - cols * cell) / 2;
+const oy = (400 - rows * cell) / 2;
+
+const occ = new Set<string>();
+const box = (c0: number, r0: number, c1: number, r1: number) => {
+  for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) occ.add(`${c},${r}`);
+};
+// walls
+box(0, 0, cols - 1, 0);
+box(0, rows - 1, cols - 1, rows - 1);
+box(0, 0, 0, rows - 1);
+box(cols - 1, 0, cols - 1, rows - 1);
+box(11, 0, 11, 9); // partition with a doorway below
+// furniture
+box(4, 4, 7, 6);
+box(15, 9, 19, 11);
+box(20, 3, 22, 4);
+box(3, 11, 5, 13);
+
+const cells = [...occ].map((k) => k.split(',').map(Number));
+// Path through cell centres: start bottom-left room, through the doorway, to the right room
+const path = [
+  [2, 9], [8, 9], [9, 12], [13, 13], [21, 13], [23, 8], [23, 6],
+].map(([c, r]) => `${ox + (c + 0.5) * cell} ${oy + (r + 0.5) * cell}`);
+const [sx, sy] = [ox + 2.5 * cell, oy + 9.5 * cell];
+const [gx, gy] = [ox + 23.5 * cell, oy + 6.5 * cell];
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Schematic occupancy grid of two rooms joined by a doorway, with obstacles filled in and a planned path from the robot to a goal in the other room.">
+  <rect class="d-ground" width="640" height="400" />
+  <g class="d-rule" stroke-width="1">
+    {Array.from({ length: cols + 1 }, (_, c) => <path d={`M${ox + c * cell} ${oy}V${oy + rows * cell}`} />)}
+    {Array.from({ length: rows + 1 }, (_, r) => <path d={`M${ox} ${oy + r * cell}H${ox + cols * cell}`} />)}
+  </g>
+  <g class="d-ink-fill">
+    {cells.map(([c, r]) => <rect x={ox + c * cell} y={oy + r * cell} width={cell} height={cell} />)}
+  </g>
+  <polyline points={path.join(' ')} class="d-leaf" fill="none" stroke-width="4" stroke-linejoin="round" />
+  <rect x={sx - 8} y={sy - 8} width="16" height="16" class="d-leaf-solid" />
+  <circle cx={gx} cy={gy} r="8" class="d-board-fill d-leaf" stroke-width="3" />
+  {!compact && (
+    <g>
+      <text x={sx + 14} y={sy - 12} class="d-on-grid">robot</text>
+      <text x={gx - 14} y={gy - 14} text-anchor="end" class="d-on-grid">goal</text>
+    </g>
+  )}
+</svg>

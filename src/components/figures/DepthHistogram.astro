@@ -1,0 +1,41 @@
+---
+// Schematic, not data: depth values inside a fruit mask. The front surface is
+// the first strong bin; the histogram peak sits behind it.
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const x0 = 60;
+const x1 = 600;
+const base = 320;
+const n = 36;
+const bw = (x1 - x0) / n;
+// Shape only: fruit surface rising from bin 6, mass behind it, foliage tail far away.
+const shape = (i: number) => {
+  const fruit = i >= 6 ? Math.exp(-((i - 12) ** 2) / 18) * 200 * Math.min(1, (i - 5) / 2) : 0;
+  const leaves = Math.exp(-((i - 27) ** 2) / 10) * 120;
+  return Math.max(4, fruit + leaves);
+};
+const bars = Array.from({ length: n }, (_, i) => ({ x: x0 + i * bw, h: shape(i) }));
+const front = x0 + 6 * bw;
+const peak = x0 + 12.5 * bw;
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Schematic histogram of depth values inside a fruit mask. Near values are on the left. The front surface of the fruit is the first strong bin; the histogram peak sits further back, and a second cluster further still comes from foliage.">
+  <rect class="d-ground" width="640" height="400" />
+  <g class="d-ink-fill" fill-opacity=".85">
+    {bars.map((b) => <rect x={b.x + 1} y={base - b.h} width={bw - 2} height={b.h} />)}
+  </g>
+  <path class="d-ink" d={`M${x0} ${base}H${x1}`} stroke-width="1.5" />
+  <path class="d-leaf" d={`M${front} ${base + 8}V60`} stroke-width="3" />
+  <path class="d-mute" d={`M${peak} ${base + 8}V60`} stroke-width="2" stroke-dasharray="6 5" />
+  {!compact && (
+    <g>
+      <text x={front - 8} y="50" text-anchor="end" class="d-leaf-text">Front surface</text>
+      <text x={peak + 8} y="50">Histogram peak</text>
+      <text x={x0 + 26.5 * bw} y={base - 140} text-anchor="middle" class="d-sub">foliage</text>
+      <text x={x0} y={base + 34}>near</text>
+      <text x={x1} y={base + 34} text-anchor="end">far</text>
+      <text x={(x0 + x1) / 2} y={base + 34} text-anchor="middle" class="d-sub">depth inside the fruit mask</text>
+    </g>
+  )}
+</svg>

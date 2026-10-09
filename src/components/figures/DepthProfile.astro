@@ -1,0 +1,33 @@
+---
+// Schematic: depth across facial keypoints from a stereo pair. A real face has
+// relief (the nose is nearest); a printed photo or screen is nearly flat.
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const pts = ['forehead', 'eyes', 'nose', 'mouth', 'chin'];
+const x0 = compact ? 90 : 150;
+const x1 = compact ? 550 : 490;
+const step = (x1 - x0) / (pts.length - 1);
+const real = [150, 170, 90, 150, 175]; // y: smaller = nearer
+const flat = [258, 260, 257, 259, 261];
+const line = (ys: number[]) => ys.map((y, i) => `${x0 + i * step} ${y}`).join(' ');
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Schematic chart of depth across five facial keypoints: forehead, eyes, nose, mouth, chin. A real face shows relief, with the nose nearest. A printed photo gives a nearly flat line.">
+  <rect class="d-ground" width="640" height="400" />
+  <path class="d-rule" d={`M${x0 - 30} 320H${x1 + 30}`} stroke-width="1.5" />
+  {pts.map((_, i) => <path class="d-rule" d={`M${x0 + i * step} 60V320`} stroke-width="1" />)}
+  <polyline points={line(flat)} class="d-mute" fill="none" stroke-width="3" stroke-dasharray="8 6" />
+  <polyline points={line(real)} class="d-leaf" fill="none" stroke-width="3.5" />
+  {real.map((y, i) => <circle cx={x0 + i * step} cy={y} r="6" class="d-leaf-solid" />)}
+  {flat.map((y, i) => <circle cx={x0 + i * step} cy={y} r="5" class="d-board-fill d-mute" stroke-width="2" />)}
+  {!compact && (
+    <g>
+      {pts.map((p, i) => <text x={x0 + i * step} y="346" text-anchor="middle" class="d-sub">{p}</text>)}
+      <text x={x1 + 22} y={real[4] + 5} class="d-leaf-text">real face</text>
+      <text x={x1 + 22} y={flat[4] + 5}>photo</text>
+      <text x="40" y="70">near</text>
+      <text x="40" y="316">far</text>
+    </g>
+  )}
+</svg>

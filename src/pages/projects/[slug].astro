@@ -1,0 +1,201 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Diagram from '../../components/Diagram.astro';
+
+export async function getStaticPaths() {
+  const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, prev: projects[i - 1], next: projects[i + 1] },
+  }));
+}
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  prev?: CollectionEntry<'projects'>;
+  next?: CollectionEntry<'projects'>;
+}
+
+const { project, prev, next } = Astro.props;
+const { Content } = await render(project);
+const { title, outcome, employer, period, tags, figure } = project.data;
+---
+
+<Base title={title} description={outcome}>
+  <article class="project wrap">
+    <div class="split head">
+      <aside class="margin side note" aria-label="Project details">
+        <a class="back" href="/#work">All projects</a>
+        <dl>
+          <dt class="visually-hidden">Employer</dt>
+          <dd>{employer}</dd>
+          <dt class="visually-hidden">Period</dt>
+          <dd>{period}</dd>
+          <dt class="visually-hidden">Methods and tools</dt>
+          <dd>
+            <ul role="list">
+              {tags.map((t) => <li>{t}</li>)}
+            </ul>
+          </dd>
+        </dl>
+      </aside>
+      <div class="content">
+        <h1>{title}</h1>
+        <p class="outcome">{outcome}</p>
+
+        <figure class="figure">
+          <div class="figure-frame">
+            <Diagram name={figure?.diagram} />
+          </div>
+          {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
+        </figure>
+
+        {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
+
+        <div class="prose body">
+          <Content />
+        </div>
+      </div>
+    </div>
+
+    <nav class="pager split" aria-label="More projects">
+      <div class="content pager-inner">
+        {prev ? (
+          <a href={`/projects/${prev.id}`}>
+            <span class="note">Previous</span>
+            <span class="pager-title">{prev.data.title}</span>
+          </a>
+        ) : <span />}
+        {next ? (
+          <a class="pager-next" href={`/projects/${next.id}`}>
+            <span class="note">Next</span>
+            <span class="pager-title">{next.data.title}</span>
+          </a>
+        ) : (
+          <a class="pager-next" href="/#contact">
+            <span class="note">Next</span>
+            <span class="pager-title">Get in touch</span>
+          </a>
+        )}
+      </div>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .project {
+    padding-top: var(--space-4);
+  }
+
+  .side {
+    padding-top: 0.6rem;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+
+  .side dl,
+  .side dd,
+  .side ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .side dd + dd {
+    margin-top: 0.15rem;
+  }
+
+  .side ul {
+    margin-top: var(--space-2);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
+    line-height: 1.05;
+    max-width: 18ch;
+  }
+
+  .outcome {
+    margin-top: var(--space-3);
+    font-size: var(--step-1);
+    line-height: 1.45;
+    max-width: 44ch;
+  }
+
+  .figure {
+    margin: var(--space-4) 0 var(--space-5);
+    max-width: 48rem;
+  }
+
+  .figure-frame {
+    border: 1px solid var(--rule);
+    padding: var(--space-2);
+  }
+
+  .figure figcaption {
+    margin-top: 0.7rem;
+    max-width: 70ch;
+    font-size: 0.95rem;
+  }
+
+  .pager {
+    margin-top: var(--space-6);
+  }
+
+  .pager-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--rule);
+  }
+
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-width: 24rem;
+    text-decoration: none;
+  }
+
+  .pager-next {
+    text-align: right;
+    margin-left: auto;
+  }
+
+  .pager-title {
+    font-family: var(--font-head);
+    font-stretch: 105%;
+    font-weight: 700;
+    font-size: var(--step-1);
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  .pager a:hover .pager-title {
+    text-decoration: underline;
+  }
+
+  /* Narrow: details become one compact block above the title */
+  @media (max-width: 859px) {
+    .side {
+      padding-top: 0;
+      margin-bottom: var(--space-3);
+    }
+    .back {
+      margin-bottom: var(--space-2);
+    }
+    .side ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 1rem;
+      margin-top: 0.3rem;
+    }
+  }
+</style>

@@ -1,0 +1,33 @@
+---
+// To scale: 10 mm production threshold vs 5 mm max error and 2 mm std (CV numbers).
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+const k = 16; // units per mm
+const cx = compact ? 320 : 210;
+const cy = 200;
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Three concentric circles drawn to scale around a target point: a 10 mm production threshold, a 5 mm maximum positional error, and a 2 mm standard deviation.">
+  <rect class="d-ground" width="640" height="400" />
+  <g class="d-rule" stroke-width="1">
+    <path d={`M${cx - 10 * k - 24} ${cy}H${cx + 10 * k + 24}M${cx} ${cy - 10 * k - 24}V${cy + 10 * k + 24}`} />
+  </g>
+  <circle cx={cx} cy={cy} r={10 * k} class="d-ink" fill="none" stroke-width="2" stroke-dasharray="7 6" />
+  <circle cx={cx} cy={cy} r={5 * k} class="d-leaf-fill" />
+  <circle cx={cx} cy={cy} r={5 * k} class="d-leaf" fill="none" stroke-width="2.5" />
+  <circle cx={cx} cy={cy} r={2 * k} class="d-ink" fill="none" stroke-width="2" />
+  <circle cx={cx} cy={cy} r="3.5" class="d-ink-fill" />
+  {!compact && (
+    <g>
+      <path class="d-mute" d={`M${cx + 10 * k * 0.7071} ${cy - 10 * k * 0.7071}L410 70H424`} fill="none" />
+      <text x="430" y="66">10 mm</text>
+      <text x="430" y="90" class="d-sub">production threshold</text>
+      <path class="d-mute" d={`M${cx + 5 * k} ${cy}H424`} fill="none" />
+      <text x="430" y="196">5 mm</text>
+      <text x="430" y="220" class="d-sub">max positional error</text>
+      <path class="d-mute" d={`M${cx + 2 * k * 0.7071} ${cy + 2 * k * 0.7071}L410 320H424`} fill="none" />
+      <text x="430" y="316">2 mm</text>
+      <text x="430" y="340" class="d-sub">standard deviation</text>
+    </g>
+  )}
+</svg>

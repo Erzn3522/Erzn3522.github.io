@@ -1,0 +1,70 @@
+---
+import { diagrams, type DiagramKey } from './figures';
+
+interface Props {
+  name?: DiagramKey;
+  compact?: boolean;
+}
+
+const { name, compact = false } = Astro.props;
+const Component = name ? diagrams[name] : undefined;
+---
+
+{Component ? (
+  <Component compact={compact} />
+) : (
+  // TODO: figure. No diagram for this project yet; a visible placeholder, not a fake image.
+  <div class="placeholder">Figure to come</div>
+)}
+
+<style is:global>
+  .diagram {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .diagram path {
+    fill: none;
+  }
+  .diagram text {
+    font-family: var(--font-head);
+    font-size: 17px;
+    font-weight: 500;
+    fill: var(--ink);
+  }
+  @media (max-width: 600px) {
+    .diagram text {
+      font-size: 22px;
+    }
+  }
+  .diagram .d-ground { fill: transparent; }
+  .diagram .d-rule { stroke: var(--rule); }
+  .diagram .d-ink { stroke: var(--ink); }
+  .diagram .d-ink-fill { fill: var(--ink); }
+  .diagram .d-leaf { stroke: var(--leaf); }
+  .diagram .d-leaf-fill { fill: var(--leaf); fill-opacity: 0.14; }
+  .diagram .d-leaf-solid { fill: var(--leaf); }
+  .diagram .d-mute { stroke: var(--mute); }
+  .diagram .d-board-fill { fill: var(--board); }
+  .diagram .d-sub { fill: var(--mute); }
+  .diagram .d-leaf-text { fill: var(--leaf); font-weight: 600; }
+  .diagram .d-num { font-size: 26px; font-weight: 700; }
+  .diagram .d-on-grid {
+    font-weight: 600;
+    paint-order: stroke;
+    stroke: var(--board);
+    stroke-width: 5px;
+  }
+</style>
+
+<style>
+  .placeholder {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 10;
+    border: 1px dashed var(--mute);
+    color: var(--mute);
+    font-family: var(--font-head);
+    font-size: var(--step--1);
+  }
+</style>
