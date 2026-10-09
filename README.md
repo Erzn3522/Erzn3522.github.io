@@ -78,7 +78,7 @@ The PDF in this repo is newer than the summary in `INITIAL.md`. The site follows
 
 Search the source for `TODO(abdullah)` to find each one in place.
 
-1. **Medium and Bento links.** They are not in the CV. Keep them, or show only GitHub and LinkedIn? (Currently shown.) `src/lib/site.ts`
+1. **Medium link.** It is not in the CV. Keep it, or show only GitHub and LinkedIn? (Currently shown; Bento was removed on request.) `src/lib/site.ts`
 2. **"What I would do next" sections.** All five are drafts written from the CV. Confirm or rewrite each one.
 3. **Numbers you can share.** Depth/detection and navigation pages have no metric in the CV. Add one if you can.
 4. **Real figures.** Which projects can have real, non-confidential figures? All five are schematics for now.

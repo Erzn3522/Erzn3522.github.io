@@ -9,12 +9,11 @@ export const site = {
   cv: '/cv.pdf',
   description:
     'Abdullah Erzin builds stereo vision and detection systems for agricultural and mobile robots. Computer vision engineer at Pek Automotive in Slovenia.',
-  // TODO(abdullah): Medium and Bento are not in the CV. Keep them, or only GitHub + LinkedIn? (README, open question 1)
+  // TODO(abdullah): Medium is not in the CV. Keep it, or only GitHub + LinkedIn? (README, open question 1)
   links: [
     { label: 'GitHub', href: 'https://github.com/Erzn3522' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/abdullah-erzin/' },
     { label: 'Medium', href: 'https://abdullaherzin.medium.com/' },
-    { label: 'Bento', href: 'https://bento.me/abdullah-erzin' },
   ],
 };
 
