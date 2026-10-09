@@ -12,7 +12,9 @@
     "astro": "astro",
     "check": "astro check",
     "shots": "node scripts/shots.mjs",
-    "og": "node scripts/og.mjs"
+    "og": "node scripts/og.mjs",
+    "prebuild": "node scripts/copy-cv.mjs",
+    "predev": "node scripts/copy-cv.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
