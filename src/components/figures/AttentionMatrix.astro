@@ -1,0 +1,29 @@
+---
+// Static attention heatmap (bidirectional, scaled) from the same toy scores
+// as the interactive figure on the self-study page (src/lib/attention.ts).
+import { TOKENS, attend } from '../../lib/attention';
+
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const A = attend({ causal: false, scaled: true });
+const n = TOKENS.length;
+const cell = compact ? 56 : 50;
+const left = compact ? (640 - n * cell) / 2 : 130;
+const top = compact ? (400 - n * cell) / 2 : 50;
+---
+
+<svg class="diagram" viewBox="0 0 640 400" role="img" aria-label="Attention matrix for a six-token Turkish sentence. Each row shows how much one token attends to every other token; darker cells mean more attention.">
+  <rect class="d-ground" width="640" height="400" />
+  {A.map((row, i) =>
+    row.map((v, j) => (
+      <rect x={left + j * cell + 1.5} y={top + i * cell + 1.5} width={cell - 3} height={cell - 3} class="d-leaf-solid" fill-opacity={Math.max(0.06, v)} />
+    )),
+  )}
+  {!compact && (
+    <g>
+      {TOKENS.map((t, j) => <text x={left + (j + 0.5) * cell} y={top - 12} text-anchor="middle">{t}</text>)}
+      {TOKENS.map((t, i) => <text x={left - 10} y={top + (i + 0.5) * cell + 6} text-anchor="end">{t}</text>)}
+    </g>
+  )}
+</svg>

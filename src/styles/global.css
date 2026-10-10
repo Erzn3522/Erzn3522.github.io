@@ -168,7 +168,7 @@ svg {
 /* Margin column (dates, notes) + content column. Stacks on narrow screens. */
 .split {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1) var(--gutter);
 }
 

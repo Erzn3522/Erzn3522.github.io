@@ -11,7 +11,7 @@ const titleOf = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
 // "May 2023 – Dec 2023" → "2023"; "Apr 2025 – present" → "2025 – present"
 const years = (period: string) => {
   const [a, b] = period.replace(/[A-Z][a-z]{2} /g, '').split(' – ');
-  return a === b ? a : `${a} – ${b}`;
+  return !b || a === b ? a : `${a} – ${b}`;
 };
 ---
 

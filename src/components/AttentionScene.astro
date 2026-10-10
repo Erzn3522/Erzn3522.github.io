@@ -1,0 +1,289 @@
+---
+import { TOKENS, GLOSS, DEFAULT_TOKEN, ARC, MAT, attend, arcPath, matSize } from '../lib/attention';
+
+const A = attend({ causal: false, scaled: true });
+const sel = DEFAULT_TOKEN;
+const { w: MW, h: MH } = matSize();
+const top = (i: number) => {
+  const row = A[i];
+  const j = row.indexOf(Math.max(...row));
+  return { j, v: row[j] };
+};
+const t0 = top(sel);
+---
+
+<figure class="att" data-attention>
+  <ol class="att-steps">
+    <li>Each token turns its vector into a <strong>query</strong> (what it is looking for) and a <strong>key</strong> (what it offers).</li>
+    <li>The query is compared with every key by a dot product, divided by √d, and passed through a softmax. The result is one row of weights that sums to 1.</li>
+    <li>The token's new vector is the weighted mix of every token's <strong>value</strong>.</li>
+  </ol>
+
+  <div class="att-sentence">
+    <svg class="arcs" viewBox={`0 0 ${ARC.w} ${ARC.h}`} preserveAspectRatio="none" aria-hidden="true">
+      {TOKENS.map((_, j) => (
+        <path
+          d={arcPath(sel, j)}
+          data-arc={j}
+          stroke-width={1 + 10 * A[sel][j]}
+          stroke-opacity={0.25 + 0.75 * A[sel][j]}
+        />
+      ))}
+    </svg>
+    <div class="tokens" role="group" aria-label="Choose the token whose attention is shown">
+      {TOKENS.map((t, i) => (
+        <button type="button" data-token={i} aria-pressed={i === sel ? 'true' : 'false'} tabindex={i === sel ? 0 : -1}>
+          {t}
+        </button>
+      ))}
+    </div>
+  </div>
+  <p class="att-readout" aria-live="polite" data-readout>
+    “{TOKENS[sel]}” attends most to “{TOKENS[t0.j]}” ({t0.v.toFixed(2)}).
+  </p>
+  <p class="note att-gloss">{GLOSS} “berbattı” is split into the pieces “berbat” and “##tı”, the way WordPiece splits Turkish suffixes.</p>
+
+  <div class="att-lower">
+    <svg class="matrix" viewBox={`0 0 ${MW} ${MH}`} role="img" aria-labelledby="att-matrix-title">
+      <title id="att-matrix-title">Attention matrix. Each row is a query token, each column a key token; darker cells mean more attention.</title>
+      {TOKENS.map((t, j) => (
+        <text x={MAT.left + (j + 0.5) * MAT.cell} y={MAT.top - 10} text-anchor="middle" class="m-label">{t}</text>
+      ))}
+      {TOKENS.map((t, i) => (
+        <text x={MAT.left - 8} y={MAT.top + (i + 0.5) * MAT.cell + 5} text-anchor="end" class="m-label">{t}</text>
+      ))}
+      {A.map((row, i) =>
+        row.map((v, j) => (
+          <g>
+            <rect
+              x={MAT.left + j * MAT.cell + 1}
+              y={MAT.top + i * MAT.cell + 1}
+              width={MAT.cell - 2}
+              height={MAT.cell - 2}
+              class="m-cell"
+              fill-opacity={Math.max(0.05, v)}
+              data-cell={`${i}-${j}`}
+            />
+            <text
+              x={MAT.left + (j + 0.5) * MAT.cell}
+              y={MAT.top + (i + 0.5) * MAT.cell + 5}
+              text-anchor="middle"
+              class={v > 0.45 ? 'm-val m-val-on' : 'm-val'}
+              data-cell-t={`${i}-${j}`}
+            >
+              {v.toFixed(2)}
+            </text>
+          </g>
+        )),
+      )}
+      <rect
+        x={MAT.left - 1}
+        y={MAT.top + sel * MAT.cell - 1}
+        width={MAT.cell * TOKENS.length + 2}
+        height={MAT.cell + 2}
+        class="m-row"
+        data-rowmark
+      />
+    </svg>
+
+    <div class="att-controls" data-controls hidden>
+      <fieldset>
+        <legend>Model</legend>
+        <label><input type="radio" name="att-mode" value="bert" checked data-mode /> BERT: every token sees every token</label>
+        <label><input type="radio" name="att-mode" value="gpt" data-mode /> GPT: a causal mask hides later tokens</label>
+      </fieldset>
+      <label class="att-check"><input type="checkbox" checked data-scaled /> Divide scores by √d</label>
+      <p class="note" data-explain>With the scaling, weights stay spread out. Turn it off to see the softmax collapse onto one token.</p>
+    </div>
+  </div>
+
+  <figcaption class="note">
+    Hand-set toy scores chosen to show patterns trained models tend to learn, such as an adjective attending to its noun and a suffix to its root. Not weights from a trained model. The softmax, the √d scaling and the mask are computed live in your browser.
+  </figcaption>
+</figure>
+
+<script>
+  import { initAttention } from '../scripts/attention';
+  document.querySelectorAll<HTMLElement>('[data-attention]').forEach(initAttention);
+</script>
+
+<style>
+  .att {
+    margin: var(--space-4) 0 var(--space-5);
+    max-width: 48rem;
+  }
+
+  .att-steps {
+    margin: 0 0 var(--space-3);
+    padding-left: 1.4em;
+    max-width: var(--measure);
+  }
+
+  .att-steps li + li {
+    margin-top: 0.4em;
+  }
+
+  .att-sentence {
+    position: relative;
+  }
+
+  .arcs {
+    display: block;
+    width: 100%;
+    height: 96px;
+    overflow: visible;
+  }
+
+  .arcs path {
+    fill: none;
+    stroke: var(--leaf);
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+
+  .tokens {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .tokens button {
+    min-height: 44px;
+    padding: 0.3rem 0.2rem;
+    font-family: var(--font-head);
+    font-size: var(--step-0);
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--rule);
+    cursor: pointer;
+  }
+
+  .tokens button[aria-pressed='true'] {
+    border: 2px solid var(--ink);
+  }
+
+  .tokens button:hover {
+    border-color: var(--ink);
+  }
+
+  @media (max-width: 480px) {
+    .tokens button {
+      font-size: 0.85rem;
+    }
+  }
+
+  .att-readout {
+    margin-top: var(--space-2);
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .att-gloss {
+    margin-top: 0.3rem;
+  }
+
+  .att-lower {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    align-items: start;
+  }
+
+  @media (min-width: 700px) {
+    .att-lower {
+      grid-template-columns: 1.2fr 1fr;
+    }
+  }
+
+  .matrix {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .matrix text {
+    font-family: var(--font-head);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .m-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--ink);
+  }
+
+  .m-cell {
+    fill: var(--leaf);
+  }
+
+  .m-cell.m-masked {
+    fill: none;
+    stroke: var(--rule);
+    stroke-dasharray: 3 3;
+  }
+
+  .m-val {
+    font-size: 12px;
+    font-weight: 500;
+    fill: var(--ink);
+  }
+
+  .m-val-on {
+    fill: var(--board);
+    font-weight: 700;
+  }
+
+  .m-row {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2.5;
+  }
+
+  .att-controls[hidden] {
+    display: none;
+  }
+
+  .att-controls {
+    display: grid;
+    gap: var(--space-2);
+    font-family: var(--font-head);
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .att-controls fieldset {
+    display: grid;
+    gap: 0.2rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .att-controls legend {
+    padding: 0;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+  }
+
+  .att-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 40px;
+  }
+
+  .att-controls input {
+    accent-color: var(--leaf);
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  figcaption {
+    margin-top: var(--space-3);
+    max-width: 70ch;
+    font-size: 0.95rem;
+  }
+</style>

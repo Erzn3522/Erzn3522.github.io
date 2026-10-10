@@ -178,3 +178,12 @@ A sixth project page with a second interactive figure, built like the hero: a sy
 - The thermal frame uses an iron palette (black → purple → orange → white), a different colormap from the hero's depth map, so the brief's rule that the depth colormap appears only in the hero still holds.
 - The model is physical but simplified: 1D flash heating (surface cools as 1/√t), reflection from a crack at depth L appearing from t ≈ L²/α, lateral washout, multiplicative uneven lamp heating that the phase removes. The Fourier transform is linear in the crack weights, so the phase image is computed in one pass per pixel.
 - Phase is shown as magnitude on a log scale above the noise floor, because the sign of the phase shift can flip with depth at a fixed frequency.
+
+## Addition: self-study page (backprop and attention)
+
+Requested by Abdullah to show command of the concepts rather than results. Two interactives inside the text, both computed live, both event-driven with no idle motion:
+
+- **Backprop:** one neuron with every forward value (ink) and backward gradient (leaf) on a computation graph, a loss curve with its tangent, and a "Take a gradient step" button. The sigmoid + cross-entropy cancellation (∂L/∂z = ŷ − y) is the centre of the explanation.
+- **Attention:** six Turkish tokens, arcs whose width is the attention weight, a heatmap matrix, a BERT/GPT causal-mask switch and a √d switch. Scores are hand-set toys and the caption says so.
+- Colour: single-hue `--leaf` ramp; the depth colormap stays exclusive to the hero and `--detect` is not used, since nothing is detected.
+- On phones the computation graph keeps a readable size and scrolls sideways inside its own box. `.split` now uses `minmax(0, 1fr)` so wide children can never widen the page.

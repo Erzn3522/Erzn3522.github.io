@@ -43,6 +43,7 @@ Writes `/` and one project page at 1440, 768 and 390 px to `./shots/`, in light,
 | `src/scripts/hero.ts` | Interactive canvas (divider, boxes, keyboard, reduced motion) |
 | `src/components/HeroScene.astro` | Hero figure: SVG fallback, canvas, caption, legend |
 | `src/lib/thermal.ts`, `src/scripts/thermal.ts`, `src/components/ThermalScene.astro` | Interactive flash-thermography figure on the thermal NDT page |
+| `src/lib/backprop.ts`, `src/lib/attention.ts`, `src/components/BackpropScene.astro`, `src/components/AttentionScene.astro` | Interactive figures on the self-study page |
 | `src/content/projects/*.md` | Project pages (frontmatter: title, outcome, order, employer, period, tags, figure) |
 | `src/components/figures/` | Schematic SVG figures, one per project |
 | `src/data/experience.ts` | Timeline, education, skills |
@@ -89,3 +90,7 @@ Search the source for `TODO(abdullah)` to find each one in place.
 8. **Thermal NDT page.** Written from the CV plus your description (Halcon and C#, Fourier transform of cooling curves, crack detection). Confirm the method wording, and add a number if you have one.
 
 Answered by the CV: location (1), Robsys end date (2), Robsys listed once (3), "Pek Automotive" spelling (4).
+
+## Self-study page
+
+`src/content/projects/ml-first-principles.mdx` is based on Abdullah's own self-study summary (Feb–May 2026), not on the CV. It is MDX so the two interactive figures can sit inside the text (`inlineFigures: true` skips the figure block under the title). There is no code link on purpose: the exercises were not kept.

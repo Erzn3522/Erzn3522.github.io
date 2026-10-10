@@ -20,7 +20,7 @@ interface Props {
 
 const { project, prev, next } = Astro.props;
 const { Content } = await render(project);
-const { title, outcome, employer, period, tags, figure, interactive } = project.data;
+const { title, outcome, employer, period, tags, figure, interactive, inlineFigures } = project.data;
 ---
 
 <Base title={title} description={outcome}>
@@ -45,7 +45,7 @@ const { title, outcome, employer, period, tags, figure, interactive } = project.
         <h1>{title}</h1>
         <p class="outcome">{outcome}</p>
 
-        {interactive === 'thermal' ? (
+        {inlineFigures ? null : interactive === 'thermal' ? (
           <ThermalScene caption={figure?.caption} />
         ) : (
           <figure class="figure">
@@ -130,6 +130,11 @@ const { title, outcome, employer, period, tags, figure, interactive } = project.
     font-size: var(--step-1);
     line-height: 1.45;
     max-width: 44ch;
+  }
+
+  /* Pages whose figures live inside the text need the gap the figure gave */
+  .outcome + .body {
+    margin-top: var(--space-5);
   }
 
   .figure {

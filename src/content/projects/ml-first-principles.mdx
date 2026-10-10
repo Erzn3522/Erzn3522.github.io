@@ -1,0 +1,51 @@
+---
+title: Backpropagation and attention, from first principles
+outcome: "Worked through deep learning from the maths up: gradients and backpropagation by hand, RNNs written from scratch, and the attention mechanism behind BERT and GPT."
+order: 7
+employer: Self-study
+period: "2026"
+tags:
+  - Backpropagation
+  - Attention
+  - PyTorch
+  - Transformers
+inlineFigures: true
+figure:
+  diagram: attention-matrix
+  caption: Attention weights for a six-token Turkish sentence.
+---
+
+import BackpropScene from '../../components/BackpropScene.astro';
+import AttentionScene from '../../components/AttentionScene.astro';
+
+{/* Source: Abdullah's own self-study summary (Feb–May 2026), not the CV. No code link: the exercises were not kept, by his choice. */}
+
+## Why
+
+At work I use trained models every day: detectors, segmentation networks, depth pipelines. I wanted to know what happens inside them, not only how to call them. So I worked through deep learning from the maths up, writing the core pieces by hand before using the library versions.
+
+## How a network learns
+
+Training is one idea repeated: measure how wrong the output is, then move every weight a little in the direction that makes it less wrong. The gradient gives that direction, and backpropagation computes it with the chain rule, one local derivative at a time, from the loss back to each weight.
+
+I worked these derivatives out by hand before relying on autograd. The case below is my favourite: for a sigmoid followed by cross-entropy, two messy factors cancel and the gradient becomes simply ŷ − y. The error itself is the learning signal.
+
+<BackpropScene />
+
+The same picture explains vanishing gradients. In a deep network the chain rule multiplies many local derivatives, and a saturated sigmoid's ∂ŷ/∂z is close to zero, so the product shrinks layer by layer until the early layers barely learn.
+
+## From recurrence to attention
+
+A recurrent network reads a sentence one token at a time and carries everything it knows in one hidden state, h<sub>t</sub> = tanh(W<sub>hh</sub>·h<sub>t−1</sub> + W<sub>xh</sub>·x<sub>t</sub> + b). I wrote one from scratch to see this. Gradients have to travel back through every step, so they fade over long sequences; the gated cell state of an LSTM is what keeps them alive. The sequential bottleneck stays, though: the fiftieth token can reach the first only through forty-nine updates.
+
+Attention removes that bottleneck. Every token looks at every other token directly, in a single step.
+
+<AttentionScene />
+
+A transformer runs several of these in parallel (multi-head attention, each head free to learn a different relation), adds positional encodings because attention on its own ignores word order, and stacks the result with feed-forward layers. In GPT-2 small, for example, 12 heads of 64 dimensions make up the 768-dimensional model, and each feed-forward layer widens it to 3,072 and back.
+
+BERT uses the bidirectional version and learns by filling in masked words. GPT uses the causal mask and predicts the next token. Because earlier tokens never see later ones, GPT can keep the keys and values it has already computed (the KV cache) instead of recomputing them for every new token.
+
+## Along the way
+
+The exercises were small and standard; the point was the understanding. Linear algebra and calculus first, then logistic and linear regression on Kaggle's Titanic and House Prices, where I learned that more feature engineering can make a model worse. Then MNIST, first with a fully connected network and then with a CNN, debugging my own training loop on the way. Then a character-level LSTM, and finally fine-tuning a Turkish BERT (`dbmdz/bert-base-turkish-cased`) for sentiment. Its first version called “Berbat bir deneyimdi” (“It was a terrible experience”) positive; I traced that to class imbalance in the training data and fixed it by rebalancing the classes.

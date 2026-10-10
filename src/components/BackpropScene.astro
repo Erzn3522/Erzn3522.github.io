@@ -1,0 +1,356 @@
+---
+import { X, B, ETA, W0, W_MIN, W_MAX, L_MAX, CURVE, cx, cy, pass, fmt, curvePath, tangentPath } from '../lib/backprop';
+
+const p = pass(W0, 1);
+// Decimals per value, shared with the client script through data-d
+const v = (key: keyof typeof p, d = 2) => ({ 'data-v': key, 'data-d': d, text: fmt(p[key] as number, d) });
+const wTicks = [-4, -2, 0, 2, 4];
+const lTicks = [0, 2, 4, 6];
+---
+
+<figure class="bp" data-backprop>
+  <div class="graph-wrap" tabindex="0" aria-label="Computation graph, scrolls sideways on small screens">
+  <svg class="graph" viewBox="0 0 720 230" role="img" aria-labelledby="bp-graph-title">
+    <title id="bp-graph-title">Computation graph of one neuron: inputs x, w and b feed z = w·x + b, then ŷ = sigmoid of z, then the cross-entropy loss L against the label y. Forward values are shown in each box; gradients flowing backwards are shown in green under each edge.</title>
+    <defs>
+      <marker id="bp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" class="bp-arrowhead" />
+      </marker>
+    </defs>
+
+    <!-- forward edges -->
+    <g class="bp-edge">
+      <path d="M110 120H250" />
+      <path d="M305 58V90" />
+      <path d="M305 176V150" />
+      <path d="M360 120H440" />
+      <path d="M540 120H610" />
+      <path d="M660 58V90" />
+    </g>
+
+    <!-- backward gradients, read right to left -->
+    <g class="bp-back">
+      <path d="M608 140H542" marker-end="url(#bp-arrow)" />
+      <path d="M438 140H362" marker-end="url(#bp-arrow)" />
+      <path d="M248 140H112" marker-end="url(#bp-arrow)" />
+    </g>
+    <g class="bp-grad" text-anchor="middle">
+      <text x="575" y="162">∂L/∂ŷ</text>
+      <text x="575" y="180" data-v="dL_dp" data-d="2">{fmt(p.dL_dp)}</text>
+      <text x="400" y="162">∂ŷ/∂z</text>
+      <text x="400" y="180" data-v="dp_dz" data-d="3">{fmt(p.dp_dz, 3)}</text>
+      <text x="180" y="162">∂z/∂w = x</text>
+      <text x="180" y="180">{fmt(X)}</text>
+    </g>
+
+    <!-- nodes -->
+    <g class="bp-node">
+      <rect x="260" y="14" width="90" height="44" />
+      <text x="305" y="32">x</text>
+      <text x="305" y="50" class="bp-val">{fmt(X)}</text>
+
+      <rect x="10" y="98" width="100" height="44" class="bp-param" />
+      <text x="60" y="116">w</text>
+      <text x="60" y="134" class="bp-val" data-v="w" data-d="2">{fmt(p.w)}</text>
+
+      <rect x="260" y="176" width="90" height="44" />
+      <text x="305" y="194">b</text>
+      <text x="305" y="212" class="bp-val">{fmt(B)}</text>
+
+      <rect x="250" y="90" width="110" height="60" />
+      <text x="305" y="114">z = w·x + b</text>
+      <text x="305" y="136" class="bp-val" data-v="z" data-d="2">{fmt(p.z)}</text>
+
+      <rect x="440" y="90" width="100" height="60" />
+      <text x="490" y="114">ŷ = σ(z)</text>
+      <text x="490" y="136" class="bp-val" data-v="p" data-d="3">{fmt(p.p, 3)}</text>
+
+      <rect x="610" y="90" width="100" height="60" />
+      <text x="660" y="114">L = BCE(ŷ, y)</text>
+      <text x="660" y="136" class="bp-val" data-v="L" data-d="3">{fmt(p.L, 3)}</text>
+
+      <rect x="615" y="14" width="90" height="44" />
+      <text x="660" y="32">label y</text>
+      <text x="660" y="50" class="bp-val" data-v="y" data-d="0">{p.y}</text>
+    </g>
+  </svg>
+  </div>
+  <p class="note graph-hint">Scroll sideways to see the whole graph.</p>
+
+  <div class="bp-chain">
+    <p>
+      ∂L/∂w = ∂L/∂ŷ · ∂ŷ/∂z · ∂z/∂w ={' '}
+      <span data-v="dL_dp" data-d="2">{fmt(p.dL_dp)}</span>{' · '}
+      <span data-v="dp_dz" data-d="3">{fmt(p.dp_dz, 3)}</span>{` · ${fmt(X)} = `}
+      <strong data-v="dL_dw" data-d="3">{fmt(p.dL_dw, 3)}</strong>
+    </p>
+    <p class="note">
+      For a sigmoid with cross-entropy the first two factors cancel: ∂L/∂z = ŷ − y ={' '}
+      <span data-v="dL_dz" data-d="3">{fmt(p.dL_dz, 3)}</span>, so ∂L/∂w = (ŷ − y)·x.
+    </p>
+  </div>
+
+  <div class="bp-lower">
+    <svg class="curve" viewBox={`0 0 ${CURVE.w} ${CURVE.h}`} role="img" aria-labelledby="bp-curve-title">
+      <title id="bp-curve-title">Loss as a function of the weight w, with the current weight marked and the tangent line whose slope is the gradient ∂L/∂w.</title>
+      {lTicks.map((l) => (
+        <g>
+          <path d={`M${CURVE.x0} ${cy(l)}H${CURVE.x1}`} class="c-grid" />
+          <text x={CURVE.x0 - 6} y={cy(l) + 4} text-anchor="end">{l}</text>
+        </g>
+      ))}
+      {wTicks.map((w) => (
+        <text x={cx(w)} y={CURVE.y1 + 16} text-anchor="middle">{fmt(w, 0)}</text>
+      ))}
+      <text x={(CURVE.x0 + CURVE.x1) / 2} y={CURVE.h - 4} text-anchor="middle" class="c-sub">weight w</text>
+      <text x={CURVE.x0} y="9" class="c-title">Loss</text>
+      <path d={`M${CURVE.x0} ${CURVE.y0}V${CURVE.y1}H${CURVE.x1}`} class="c-axis" />
+      <path d={curvePath(1)} class="c-curve" data-curve />
+      <path d={tangentPath(W0, 1)} class="c-tangent" data-tangent />
+      <circle cx={cx(W0)} cy={cy(p.L)} r="6" class="c-point" data-point />
+    </svg>
+
+    <div class="bp-controls" data-controls hidden>
+      <div class="bp-row">
+        <label for="bp-w">Weight w</label>
+        <input id="bp-w" type="range" min={W_MIN} max={W_MAX} step="0.01" value={W0} data-w />
+        <output for="bp-w" data-v="w" data-d="2">{fmt(W0)}</output>
+      </div>
+      <fieldset class="bp-row bp-label">
+        <legend>True label</legend>
+        <label><input type="radio" name="bp-y" value="1" checked data-y /> y = 1</label>
+        <label><input type="radio" name="bp-y" value="0" data-y /> y = 0</label>
+      </fieldset>
+      <div class="bp-step">
+        <button type="button" class="button button-primary" data-step>Take a gradient step</button>
+        <p class="note" aria-live="polite" data-step-out>w ← w − η·∂L/∂w, with η = {ETA}.</p>
+      </div>
+    </div>
+  </div>
+
+  <figcaption class="note">
+    One neuron and one training example, computed live in your browser. Drag the weight to see every gradient change, then take steps downhill. When the prediction is confidently wrong the gradient is large; as ŷ approaches y it shrinks towards zero.
+  </figcaption>
+</figure>
+
+<script>
+  import { initBackprop } from '../scripts/backprop';
+  document.querySelectorAll<HTMLElement>('[data-backprop]').forEach(initBackprop);
+</script>
+
+<style>
+  .bp {
+    margin: var(--space-4) 0 var(--space-5);
+    max-width: 48rem;
+  }
+
+  .graph-wrap {
+    overflow-x: auto;
+  }
+
+  .graph-hint {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .graph {
+      min-width: 620px;
+    }
+    .graph-hint {
+      display: block;
+      margin-top: 0.3rem;
+    }
+  }
+
+  .graph,
+  .curve {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .graph text,
+  .curve text {
+    font-family: var(--font-head);
+    font-size: 13px;
+    font-weight: 500;
+    fill: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .graph path,
+  .curve path {
+    fill: none;
+  }
+
+  .bp-node rect {
+    fill: var(--board);
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+
+  .bp-node .bp-param {
+    stroke-width: 3;
+  }
+
+  .bp-node text {
+    text-anchor: middle;
+  }
+
+  .graph .bp-val {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .bp-edge path {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+
+  .bp-back path {
+    stroke: var(--leaf);
+    stroke-width: 2;
+  }
+
+  .bp-arrowhead {
+    fill: var(--leaf);
+  }
+
+  .graph .bp-grad text {
+    fill: var(--leaf);
+    font-weight: 600;
+  }
+
+  .bp-chain {
+    margin-top: var(--space-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bp-chain p + p {
+    margin-top: 0.4rem;
+  }
+
+  .bp-chain strong {
+    color: var(--leaf);
+  }
+
+  .bp-lower {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    align-items: start;
+  }
+
+  @media (min-width: 700px) {
+    .bp-lower {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .curve .c-title {
+    font-weight: 600;
+  }
+
+  .curve .c-sub,
+  .curve text {
+    fill: var(--mute);
+  }
+
+  .curve .c-title {
+    fill: var(--ink);
+  }
+
+  .c-grid {
+    stroke: var(--rule);
+  }
+
+  .c-axis {
+    stroke: var(--mute);
+  }
+
+  .c-curve {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .c-tangent {
+    stroke: var(--leaf);
+    stroke-width: 2.5;
+  }
+
+  .c-point {
+    fill: var(--leaf);
+    stroke: var(--board);
+    stroke-width: 2;
+  }
+
+  .bp-controls[hidden] {
+    display: none;
+  }
+
+  .bp-controls {
+    display: grid;
+    gap: var(--space-2);
+    font-family: var(--font-head);
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .bp-row {
+    display: grid;
+    grid-template-columns: auto 1fr 3.5em;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .bp-row input[type='range'] {
+    width: 100%;
+    min-height: 44px;
+    accent-color: var(--leaf);
+  }
+
+  .bp-row output {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bp-label {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.2rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .bp-label legend {
+    float: left;
+    margin-right: 0.5rem;
+    padding: 0;
+  }
+
+  .bp-label label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+  }
+
+  .bp-label input {
+    accent-color: var(--leaf);
+    width: 18px;
+    height: 18px;
+  }
+
+  .bp-step .note {
+    margin-top: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  figcaption {
+    margin-top: var(--space-3);
+    max-width: 70ch;
+    font-size: 0.95rem;
+  }
+</style>
