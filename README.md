@@ -94,3 +94,7 @@ Answered by the CV: location (1), Robsys end date (2), Robsys listed once (3), "
 ## Self-study page
 
 `src/content/projects/ml-first-principles.mdx` is based on Abdullah's own self-study summary (Feb–May 2026), not on the CV. It is MDX so the two interactive figures can sit inside the text (`inlineFigures: true` skips the figure block under the title). There is no code link on purpose: the exercises were not kept.
+
+## Private side project page
+
+`src/content/projects/side-project-infrastructure.md` covers an unreleased, confidential side project. It describes engineering practice only (Docker, CI/CD) and must never describe the product, its users, data, architecture or launch plans, or link a repository or demo. The CI/CD tool could not be checked against a repository, so the body is tool-agnostic and "GitHub Actions" appears only in the tags Abdullah supplied.

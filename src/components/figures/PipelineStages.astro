@@ -1,0 +1,32 @@
+---
+// Generic stages of a CI/CD workflow. Deliberately product-agnostic: no
+// services, environments, tools or architecture of the private project.
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+
+const stages = ['Change', 'Validate', 'Build image', 'Deliver'];
+const w = 136;
+const h = 70;
+const gap = 20;
+const x0 = (640 - (stages.length * w + (stages.length - 1) * gap)) / 2;
+const y = compact ? 165 : 150;
+---
+
+<svg class="diagram" viewBox={compact ? '0 0 640 400' : '0 100 640 150'} role="img" aria-label="Generic workflow in four steps: a change is validated, built into a container image, and delivered.">
+  <rect class="d-ground" width="640" height="400" />
+  {stages.map((s, i) => {
+    const x = x0 + i * (w + gap);
+    return (
+      <g>
+        <rect x={x} y={y} width={w} height={h} class={i === 2 ? 'd-board-fill d-leaf' : 'd-board-fill d-ink'} stroke-width={i === 2 ? 3 : 2} />
+        {i < stages.length - 1 && <path d={`M${x + w + 4} ${y + h / 2}H${x + w + gap - 6}M${x + w + gap - 13} ${y + h / 2 - 6}L${x + w + gap - 5} ${y + h / 2}L${x + w + gap - 13} ${y + h / 2 + 6}`} class="d-ink" stroke-width="2" />}
+        {!compact && (
+          <>
+            <text x={x + w / 2} y={y + h / 2 + 6} text-anchor="middle">{s}</text>
+            <text x={x + w / 2} y={y - 14} text-anchor="middle" class="d-sub">{i + 1}</text>
+          </>
+        )}
+      </g>
+    );
+  })}
+</svg>

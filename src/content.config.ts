@@ -18,7 +18,7 @@ const projects = defineCollection({
     figure: z
       .object({
         diagram: z
-          .enum(['calibration-target', 'depth-histogram', 'pick-order', 'occupancy-grid', 'depth-profile', 'thermal-plate', 'attention-matrix'])
+          .enum(['calibration-target', 'depth-histogram', 'pick-order', 'occupancy-grid', 'depth-profile', 'thermal-plate', 'attention-matrix', 'pipeline-stages'])
           .optional(),
         caption: z.string(),
       })

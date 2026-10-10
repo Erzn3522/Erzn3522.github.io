@@ -5,6 +5,7 @@ import OccupancyGrid from './OccupancyGrid.astro';
 import DepthProfile from './DepthProfile.astro';
 import ThermalPlate from './ThermalPlate.astro';
 import AttentionMatrix from './AttentionMatrix.astro';
+import PipelineStages from './PipelineStages.astro';
 
 // TODO(abdullah): all figures are schematics. Which projects can show real, non-confidential figures? (README, open question 4)
 // Keys used in project frontmatter (`figure.diagram`)
@@ -16,6 +17,7 @@ export const diagrams = {
   'depth-profile': DepthProfile,
   'thermal-plate': ThermalPlate,
   'attention-matrix': AttentionMatrix,
+  'pipeline-stages': PipelineStages,
 } as const;
 
 export type DiagramKey = keyof typeof diagrams;
