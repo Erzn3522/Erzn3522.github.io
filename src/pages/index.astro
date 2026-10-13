@@ -5,54 +5,62 @@ import HeroScene from '../components/HeroScene.astro';
 import Diagram from '../components/Diagram.astro';
 import { site, mailto } from '../lib/site';
 import { experience, education, skills } from '../data/experience';
+import { years, startYear } from '../lib/format';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const titleOf = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
-// "May 2023 – Dec 2023" → "2023"; "Apr 2025 – present" → "2025 – present"
-const years = (period: string) => {
-  const [a, b] = period.replace(/[A-Z][a-z]{2} /g, '').split(' – ');
-  return !b || a === b ? a : `${a} – ${b}`;
-};
 ---
 
 <Base>
+  <!-- ───────── Hero: the far plane ───────── -->
   <section class="hero wrap" aria-labelledby="hero-title">
-    <div class="hero-text">
-      <h1 id="hero-title">Computer vision for robots that work outdoors.</h1>
-      <p class="hero-sub">
-        I build stereo vision and detection systems for agricultural and mobile robots. Currently at
-        Pek Automotive in Slovenia.
-      </p>
-      <p class="hero-actions">
-        <a class="button button-primary" href="#work">View projects</a>
-        <a class="button" href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV</a>
-      </p>
-    </div>
-    <div class="hero-scene">
-      <HeroScene />
+    <h1 id="hero-title" class="hero__title" data-split="lines" data-intro data-lcp>
+      Computer vision for robots that work&nbsp;outdoors.
+    </h1>
+    <div class="hero__body">
+      <div class="hero__text">
+        <p class="hero__sub" data-reveal="up" data-intro data-delay="0.25" data-lcp>
+          I build stereo vision and detection systems for agricultural and mobile robots. Currently at
+          Pek Automotive in Slovenia.
+        </p>
+        <p class="hero__actions" data-reveal="up" data-intro data-delay="0.35">
+          <a class="button button-primary" href={mailto}><span>Email me</span></a>
+          <a class="button" href={site.cv} download="Abdullah-Erzin-CV.pdf"><span>Download CV</span></a>
+        </p>
+        <dl class="hero__facts" data-reveal="fade" data-intro data-delay="0.5">
+          <div><dt class="meta">Now</dt><dd>Computer vision engineer, Pek Automotive</dd></div>
+          <div><dt class="meta">Field</dt><dd>Harvesting robots deployed in five countries</dd></div>
+          <div><dt class="meta">Since</dt><dd>2020, from machine vision intern to robotics</dd></div>
+        </dl>
+      </div>
+      <div class="hero__scene" data-reveal="clip" data-intro data-delay="0.15">
+        <HeroScene />
+      </div>
     </div>
   </section>
 
-  <section id="work" class="section wrap" aria-labelledby="work-title">
-    <div class="split">
-      <h2 id="work-title" class="content section-title">Selected work</h2>
+  <!-- ───────── Selected work ───────── -->
+  <section id="work" class="work wrap" aria-labelledby="work-title">
+    <div class="section-head">
+      <h2 id="work-title" class="section-title" data-split="lines">Selected work</h2>
+      <p class="meta section-count">{projects.length} projects. Pek Automotive work is shown as synthetic scenes and schematics.</p>
     </div>
     <ul class="work-list" role="list">
       {projects.map((p) => (
         <li>
-          <a class="work-row" href={`/projects/${p.id}`}>
+          <a class="row" href={`/projects/${p.id}`}>
             {/* Title first in the DOM so it leads the link's accessible name */}
-            <span class="work-text">
-              <span class="work-title">{p.data.title}</span>
-              <span class="work-outcome">{p.data.outcome}</span>
+            <span class="row__text">
+              <span class="row__title">{p.data.title}</span>
+              <span class="row__outcome">{p.data.outcome}</span>
             </span>
-            <span class="work-meta note">
-              {p.data.employer}
-              <br />
-              {years(p.data.period)}
+            <span class="row__meta meta">
+              <span>{p.data.employer}</span>
+              <span>{years(p.data.period)}</span>
             </span>
-            <span class="work-thumb" aria-hidden="true">
-              <Diagram name={p.data.figure?.diagram} compact />
+            <span class="row__fig lock" aria-hidden="true">
+              <span class="row__frame"><Diagram name={p.data.figure?.diagram} compact /></span>
+              <span class="lock__chip">{p.data.metric ?? years(p.data.period)}</span>
             </span>
           </a>
         </li>
@@ -60,62 +68,68 @@ const years = (period: string) => {
     </ul>
   </section>
 
-  <section id="experience" class="section wrap" aria-labelledby="experience-title">
-    <div class="split">
-      <h2 id="experience-title" class="content section-title">Experience</h2>
+  <!-- ───────── Experience: a real sequence ───────── -->
+  <section id="experience" class="xp wrap" aria-labelledby="experience-title">
+    <div class="section-head">
+      <h2 id="experience-title" class="section-title" data-split="lines">Experience</h2>
+      <p class="meta section-count">Newest first</p>
     </div>
-    <ol class="timeline" role="list">
+    <ol class="xp-list" role="list">
       {experience.map((r) => (
-        <li class="split">
-          <p class="margin note dates">
-            <span>{r.start} –</span>
-            <span>{r.end}</span>
-          </p>
-          <div class="content entry">
+        <li class="xp-item">
+          <p class="xp-year" aria-hidden="true">{startYear(r.start)}</p>
+          <div class="xp-main">
             <h3>{r.role}, {r.org}</h3>
-            <p class="note">{r.place}</p>
-            <p class="entry-summary">{r.summary}</p>
-            {r.projects && (
-              <p class="entry-links">
-                {r.projects.length > 1 ? 'Projects: ' : 'Project: '}
-                {r.projects.map((slug, i) => (
-                  <>
-                    <a href={`/projects/${slug}`}>{titleOf[slug]}</a>
-                    {i < r.projects!.length - 1 ? ', ' : ''}
-                  </>
-                ))}
-              </p>
-            )}
+            <p class="meta">
+              {r.start} to {r.end}. {r.place}
+            </p>
+            <p class="xp-summary">{r.summary}</p>
           </div>
+          {r.projects && (
+            <ul class="xp-links" role="list" aria-label={`Projects at ${r.org}`}>
+              {r.projects.map((slug) => (
+                <li><a class="link" href={`/projects/${slug}`}>{titleOf[slug]}</a></li>
+              ))}
+            </ul>
+          )}
         </li>
       ))}
     </ol>
-    <div class="split education">
-      <p class="margin note dates"><span>Graduated</span><span>{education.date}</span></p>
-      <div class="content">
-        <h3>{education.degree}, {education.school}</h3>
-        <p class="note">{education.place}</p>
+    <h3 class="xp-group meta">Education</h3>
+    <div class="xp-item xp-edu">
+      <p class="xp-year" aria-hidden="true">{startYear(education.date)}</p>
+      <div class="xp-main">
+        <h4>{education.degree}, {education.school}</h4>
+        <p class="meta">Graduated {education.date}. {education.place}</p>
       </div>
     </div>
   </section>
 
-  <section id="about" class="section wrap" aria-labelledby="about-title">
-    <div class="split">
-      <h2 id="about-title" class="content section-title">About</h2>
-      <div class="content prose">
+  <!-- ───────── About: a statement ───────── -->
+  <section id="about" class="about wrap" aria-labelledby="about-title">
+    <h2 id="about-title" class="visually-hidden">About</h2>
+    <p class="about__statement" data-split="lines">
+      Most of my work sits between the camera and the robot: calibration, stereo depth, 3D coordinate
+      transforms and real-time detection on edge hardware.
+    </p>
+    <div class="about__grid">
+      <div class="about__prose prose">
         <p>
-          I am a computer vision engineer with about five years in robotics and machine vision. Most
-          of my work sits between the camera and the robot: camera calibration, stereo depth, 3D
-          coordinate transforms, and real-time detection on edge hardware such as NVIDIA Jetson and
-          Intel RealSense. I build production pipelines in Python and C++ and stay with them from the
-          algorithm to field deployment. Away from work I ride motorcycles and dive, as a 1-star
-          diver.
+          I have worked in robotics and machine vision for about five years, on NVIDIA Jetson and
+          Intel RealSense as often as on a workstation. I build production pipelines in Python and C++
+          and stay with them from the algorithm to the field, which is where the hard cases are.
         </p>
+        <p>
+          In 2026 I worked through deep learning from the maths up, to understand the models I use every
+          day. The <a href="/projects/ml-first-principles">backpropagation and attention notes</a> are
+          interactive.
+        </p>
+        <p>Away from work I ride motorcycles and dive, as a 1-star diver.</p>
       </div>
-      <dl class="content skills">
+      <dl class="skills">
         {skills.map((s) => (
           <div>
-            <dt>{s.group}</dt>
+            <dt class="meta">{s.group}</dt>
             <dd>{s.items}</dd>
           </div>
         ))}
@@ -123,265 +137,352 @@ const years = (period: string) => {
     </div>
   </section>
 
-  <section id="contact" class="section wrap" aria-labelledby="contact-title">
-    <div class="split">
-      <h2 id="contact-title" class="content section-title">Contact</h2>
-      <div class="content">
-        <p class="contact-lead">Email is the quickest way to reach me.</p>
-        <p><a class="contact-email" href={mailto}>{site.email}</a></p>
-        <ul class="contact-links" role="list">
-          <li><a href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV (PDF)</a></li>
-          {site.links.map((l) => (
-            <li><a href={l.href} rel="me">{l.label}</a></li>
-          ))}
-        </ul>
-        <p class="note">Based in {site.location}.</p>
-      </div>
-    </div>
+  <!-- ───────── Contact: in reach ───────── -->
+  <section id="contact" class="contact wrap" aria-labelledby="contact-title">
+    <h2 id="contact-title" class="contact__title" data-split="lines">Contact</h2>
+    <p class="contact__lead">Email is the quickest way to reach me.</p>
+    <p class="contact__target" data-lock-on-arrive>
+      <a class="contact__email lock" href={mailto}>
+        {site.email}
+        <span class="lock__chip" aria-hidden="true">In reach</span>
+      </a>
+    </p>
+    <ul class="contact__links" role="list">
+      <li><a class="button" href={site.cv} download="Abdullah-Erzin-CV.pdf"><span>Download CV (PDF)</span></a></li>
+      {site.links.map((l) => (
+        <li><a class="button" href={l.href} rel="me"><span>{l.label}</span></a></li>
+      ))}
+    </ul>
   </section>
 </Base>
 
 <style>
   /* ---------- Hero ---------- */
   .hero {
+    padding-top: clamp(0.5rem, 1.2vw, 1.25rem);
+  }
+
+  /* Two lines at desktop widths so the whole stereo scene fits in the first viewport */
+  .hero__title {
+    font-size: clamp(2.5rem, 0.2rem + 5.1vw, 6.2rem);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    margin-left: -0.05em;
+  }
+
+  @media (max-width: 899px) {
+    .hero__title {
+      font-size: clamp(2.5rem, 0.6rem + 8.4vw, 5rem);
+    }
+  }
+
+  .hero__body {
     display: grid;
     gap: var(--space-4) var(--gutter);
-    padding-block: var(--space-3) var(--space-5);
+    margin-top: clamp(1.5rem, 2.2vw, 2.25rem);
   }
 
-  .hero h1 {
-    font-size: clamp(2.1rem, 1.3rem + 3.6vw, var(--step-5));
-    line-height: 1.04;
-    max-width: 14ch;
+  .hero__sub {
+    font-size: var(--t-m);
+    line-height: 1.4;
+    max-width: 30ch;
   }
 
-  .hero-sub {
-    margin-top: var(--space-3);
-    font-size: var(--step-1);
-    line-height: 1.5;
-    max-width: 34ch;
-  }
-
-  .hero-actions {
+  .hero__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: var(--space-4);
   }
 
-  @media (min-width: 1000px) {
-    .hero {
+  .hero__facts {
+    display: grid;
+    gap: 0;
+    margin-top: var(--space-5);
+    border-top: 1px solid var(--c-line);
+  }
+
+  .hero__facts div {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: var(--gutter);
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--c-line);
+    font-size: var(--t-s);
+    line-height: 1.4;
+  }
+
+  .hero__facts dt {
+    padding-top: 0.05rem;
+  }
+
+  .hero__facts dd {
+    margin: 0;
+  }
+
+  /* Phones: the text, then the scene, then the facts */
+  @media (max-width: 899px) {
+    .hero__text {
+      display: contents;
+    }
+    .hero__facts {
+      order: 2;
+      margin-top: 0;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .hero__body {
       grid-template-columns: repeat(12, minmax(0, 1fr));
       align-items: start;
-      padding-top: var(--space-4);
     }
-    .hero-text {
-      grid-column: 1 / span 5;
-      padding-top: var(--space-2);
+    .hero__text {
+      grid-column: 1 / span 4;
+      padding-top: 0.2rem;
     }
-    .hero-scene {
+    .hero__scene {
       grid-column: 6 / -1;
     }
   }
 
-  /* ---------- Sections ---------- */
-  .section {
-    padding-block: var(--space-6) 0;
+  /* ---------- Section heads ---------- */
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--c-line);
   }
 
   .section-title {
-    font-size: var(--step-4);
-    margin-bottom: var(--space-4);
+    font-size: var(--t-xl);
+    font-stretch: 125%;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
   }
 
-  /* ---------- Selected work ---------- */
+  .section-count {
+    max-width: 34ch;
+  }
+
+  /* ---------- Selected work: index list ---------- */
+  .work {
+    padding-top: var(--space-7);
+  }
+
   .work-list {
     list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--rule);
   }
 
   .work-list li {
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--c-line);
   }
 
-  .work-row {
+  .row {
     display: grid;
     gap: var(--space-2) var(--gutter);
     padding-block: var(--space-4);
-    color: var(--ink);
-    text-decoration: none;
   }
 
-  .work-meta {
+  .row__meta {
     order: -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.8em;
   }
 
-  .work-title {
+  .row__title {
     display: block;
-    font-family: var(--font-head);
+    font-size: var(--t-l);
     font-stretch: 112%;
     font-weight: 700;
-    font-size: var(--step-3);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
     text-wrap: balance;
+    transition: translate 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
 
-  .work-outcome {
+  .row__outcome {
     display: block;
     margin-top: var(--space-2);
-    max-width: 52ch;
+    max-width: 54ch;
+    color: var(--c-muted);
   }
 
-  .work-row:hover .work-title {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.12em;
-  }
-
-  .work-thumb {
-    position: relative;
+  .row__fig {
     display: block;
-    max-width: 320px;
-    border: 1px solid var(--rule);
+    width: min(100%, 360px);
+    margin-top: var(--space-2);
   }
 
-  /* A detection box answers hover and focus */
-  .work-thumb::after {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    border: 2px solid var(--detect);
-    opacity: 0;
+  .row__frame {
+    display: block;
+    border: 1px solid var(--c-line);
+    background: rgb(233 236 230 / 0.02);
   }
 
-  .work-row:hover .work-thumb::after,
-  .work-row:focus-visible .work-thumb::after {
-    opacity: 1;
+  @media (hover: hover) {
+    .row:hover .row__title {
+      translate: 0.4rem 0;
+    }
   }
 
-  @media (min-width: 860px) {
-    .work-row {
+  .row:focus-visible {
+    outline-offset: 6px;
+  }
+
+  .row:focus-visible .row__title {
+    translate: 0.4rem 0;
+  }
+
+  .row:active .row__title {
+    translate: 0.6rem 0;
+  }
+
+  @media (min-width: 900px) {
+    .row {
       grid-template-columns: repeat(12, minmax(0, 1fr));
       align-items: start;
     }
-    .work-meta {
+    .row__meta {
       grid-column: 1 / span 3;
       grid-row: 1;
-      padding-top: 0.5rem;
+      flex-direction: column;
+      padding-top: 0.45rem;
     }
-    .work-text {
-      grid-column: 4 / span 6;
+    .row__text {
+      grid-column: 4 / span 5;
       grid-row: 1;
     }
-    .work-thumb {
+    .row__fig {
       grid-column: 10 / -1;
       grid-row: 1;
       width: 100%;
+      margin-top: 0.4rem;
     }
   }
 
-  /* ---------- Experience ---------- */
-  .timeline {
+  /* ---------- Experience: years as numerals ---------- */
+  .xp {
+    padding-top: var(--space-7);
+  }
+
+  .xp-list {
     list-style: none;
-    margin: 0;
-    padding: 0;
   }
 
-  .dates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 0.3em;
-    padding-top: 0.2rem;
+  .xp-item {
+    display: grid;
+    gap: var(--space-1) var(--gutter);
+    padding-block: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--c-line);
   }
 
-  .entry {
-    position: relative;
-    padding-bottom: var(--space-4);
-    max-width: 62ch;
+  .xp-year {
+    font-size: var(--t-xl);
+    font-stretch: 62%;
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-muted);
   }
 
-  .entry h3,
-  .education h3 {
-    font-size: var(--step-1);
-    line-height: 1.25;
+  .xp-group {
+    margin-top: var(--space-5);
+    padding-bottom: var(--space-1);
+    font-size: var(--t-s);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--c-line);
   }
 
-  .entry .note,
-  .education .note {
-    margin-top: 0.2rem;
+  .xp-main h3,
+  .xp-main h4 {
+    font-size: var(--t-m);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
   }
 
-  .entry-summary {
-    margin-top: 0.6rem;
+  .xp-main .meta {
+    margin-top: 0.3rem;
   }
 
-  .entry-links {
-    margin-top: 0.5rem;
-    font-size: var(--step--1);
-    font-family: var(--font-head);
-    color: var(--mute);
+  .xp-summary {
+    margin-top: 0.7rem;
+    max-width: 58ch;
   }
 
-  @media (min-width: 860px) {
-    .dates {
-      flex-direction: column;
+  .xp-links a {
+    display: inline-block;
+    padding-block: 0.25rem;
+  }
+
+  .xp-links {
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+    font-size: var(--t-s);
+    line-height: 1.35;
+  }
+
+  @media (min-width: 900px) {
+    .xp-item {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
     }
-    .timeline .entry {
-      padding-left: var(--space-3);
-      border-left: 1px solid var(--rule);
+    .xp-year {
+      grid-column: 1 / span 3;
     }
-    /* Square tick where each role starts */
-    .timeline .entry::before {
-      content: '';
-      position: absolute;
-      left: -5px;
-      top: 0.55rem;
-      width: 9px;
-      height: 9px;
-      background: var(--ink);
+    .xp-main {
+      grid-column: 4 / span 6;
+      padding-top: 0.3rem;
     }
-    .timeline li:last-child .entry {
-      padding-bottom: var(--space-3);
-    }
-    .education .content {
-      padding-left: var(--space-3);
+    .xp-links {
+      grid-column: 10 / -1;
+      padding-top: 0.5rem;
     }
   }
 
-  @media (max-width: 859px) {
-    .timeline li + li {
-      border-top: 1px solid var(--rule);
-      padding-top: var(--space-3);
-    }
+  /* ---------- About: statement ---------- */
+  .about {
+    padding-top: var(--space-7);
   }
 
-  .education {
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--rule);
+  .about__statement {
+    font-size: var(--t-l);
+    font-stretch: 112%;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    max-width: 30ch;
   }
 
-  /* ---------- About ---------- */
+  .about__grid {
+    display: grid;
+    gap: var(--space-5) var(--gutter);
+    margin-top: var(--space-5);
+  }
+
   .skills {
-    margin: var(--space-4) 0 0;
-    max-width: var(--measure);
+    border-top: 1px solid var(--c-line);
   }
 
   .skills div {
     display: grid;
-    gap: 0.1rem var(--gutter);
-    padding-block: 0.7rem;
-    border-top: 1px solid var(--rule);
+    gap: 0.15rem var(--gutter);
+    padding-block: 0.75rem;
+    border-bottom: 1px solid var(--c-line);
   }
 
   .skills dt {
-    font-family: var(--font-head);
-    font-weight: 600;
-    font-size: var(--step--1);
-    padding-top: 0.2rem;
+    padding-top: 0.15rem;
   }
 
   .skills dd {
@@ -390,35 +491,119 @@ const years = (period: string) => {
 
   @media (min-width: 600px) {
     .skills div {
-      grid-template-columns: 12rem 1fr;
+      grid-template-columns: 11rem 1fr;
     }
   }
 
-  /* ---------- Contact ---------- */
-  .contact-email {
+  @media (min-width: 900px) {
+    .about__statement {
+      margin-left: calc((100% - 11 * var(--gutter)) / 12 * 3 + 3 * var(--gutter));
+    }
+    .about__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .about__prose {
+      grid-column: 4 / span 4;
+    }
+    .skills {
+      grid-column: 8 / -1;
+    }
+  }
+
+  /* ---------- Contact: the target, in reach ---------- */
+  .contact {
+    display: grid;
+    align-content: center;
+    padding-top: var(--space-7);
+  }
+
+  @media (min-width: 900px) {
+    .contact {
+      min-height: 92svh;
+    }
+  }
+
+  .contact__title {
+    font-size: clamp(3rem, 0.5rem + 11vw, 12rem);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.85;
+    letter-spacing: -0.045em;
+    margin-left: -0.05em;
+  }
+
+  .contact__lead {
+    margin-top: var(--space-4);
+    font-size: var(--t-m);
+    color: var(--c-muted);
+  }
+
+  .contact__target {
+    margin-top: var(--space-4);
+    padding: 0.6rem 0.6rem 0.6rem 0;
+  }
+
+  .contact__email {
     display: inline-block;
-    margin-top: var(--space-2);
-    font-family: var(--font-head);
+    font-size: clamp(1rem, 4.3vw, 3.4rem);
+    font-stretch: 112%;
     font-weight: 700;
-    font-stretch: 105%;
-    font-size: clamp(1.15rem, 0.8rem + 2vw, var(--step-3));
-    line-height: 1.2;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
     overflow-wrap: anywhere;
   }
 
-  .contact-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.6rem;
-    list-style: none;
-    margin: var(--space-4) 0 var(--space-3);
-    padding: 0;
-    font-family: var(--font-head);
-    font-weight: 500;
+  .contact__email {
+    padding-block: 0.15em;
   }
 
-  .contact-links a {
-    display: inline-block;
-    padding-block: 0.35rem;
+  .contact__email::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    background: var(--c-depth);
+    opacity: 0;
+    scale: 1 0;
+    transform-origin: 50% 100%;
+    transition: scale 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.2s;
+    z-index: -1;
+  }
+
+  .contact__target {
+    position: relative;
+    isolation: isolate;
+  }
+
+  @media (hover: hover) {
+    .contact__email:hover {
+      color: var(--c-on-depth);
+    }
+    .contact__email:hover::before {
+      opacity: 1;
+      scale: 1 1;
+    }
+  }
+
+  .contact__email:focus-visible {
+    color: var(--c-on-depth);
+  }
+
+  .contact__email:focus-visible::before {
+    opacity: 1;
+    scale: 1 1;
+  }
+
+  .contact__email .lock__chip {
+    left: -6px;
+    top: -6px;
+    font-size: var(--t-s);
+  }
+
+  .contact__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    list-style: none;
+    margin-top: var(--space-5);
   }
 </style>

@@ -6,19 +6,19 @@
 // not weights from a trained model. Formally Q holds these rows and K is the
 // identity, so QKᵀ is the score matrix; d is the vector size used for √d.
 
-export const TOKENS = ['Yemek', 'güzel', 'ama', 'servis', 'berbat', '##tı'];
-export const GLOSS = 'Yemek güzel ama servis berbattı: “The food was good but the service was terrible.”';
+export const TOKENS = ['Great', 'food', 'but', 'service', 'lag', '##ged'];
+export const GLOSS = 'A shortened “Great food, but the service lagged.”';
 export const D = 6;
 export const DEFAULT_TOKEN = 4;
 
 // rows: query token, columns: key token
 const SCORES = [
-  [3, 6, 1, 1, 1, 0], // Yemek  → güzel
-  [6, 3, 1, 1, 1, 0], // güzel  → Yemek
-  [3, 3, 2, 3, 4, 1], // ama    → both clauses
-  [1, 1, 2, 3, 6, 2], // servis → berbat
-  [1, 1, 2, 6, 3, 4], // berbat → servis, ##tı
-  [0, 0, 1, 2, 7, 3], // ##tı   → berbat (its root)
+  [3, 6, 1, 1, 1, 0], // Great   → food
+  [6, 3, 1, 1, 1, 0], // food    → Great
+  [3, 3, 2, 3, 4, 1], // but     → both clauses
+  [1, 1, 2, 3, 6, 2], // service → lag
+  [1, 1, 2, 6, 3, 4], // lag     → service, ##ged
+  [0, 0, 1, 2, 7, 3], // ##ged   → lag (its root)
 ];
 
 export interface Options {

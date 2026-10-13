@@ -87,7 +87,7 @@ const chartData = JSON.stringify({ VW, VH, X0, X1, Y0, Y1, TA0, TA1, CB1 });
 
   <div class="charts">
     <svg class="chart" viewBox={`0 0 ${VW} ${VH}`} role="img" aria-labelledby="chart-a-title">
-      <title id="chart-a-title">Cooling curves on log–log axes. The sound area cools along a straight line. Over each crack the curve bends upward, later for deeper cracks.</title>
+      <title id="chart-a-title">Cooling curves on log-log axes. The sound area cools along a straight line. Over each crack the curve bends upward, later for deeper cracks.</title>
       <text x={X0} y="11" class="c-title">Cooling curves</text>
       {tempTicks.map((v) => (
         <g>
@@ -144,7 +144,13 @@ const chartData = JSON.stringify({ VW, VH, X0, X1, Y0, Y1, TA0, TA1, CB1 });
 
 <script>
   import { initThermal } from '../scripts/thermal';
-  document.querySelectorAll<HTMLElement>('[data-thermal]').forEach(initThermal);
+  import { onPage } from '../engine';
+  // The ClientRouter swaps pages without re-running scripts: init per page, clean up on leave.
+  onPage(() => {
+    const ac = new AbortController();
+    document.querySelectorAll<HTMLElement>('[data-thermal]').forEach((el) => initThermal(el, ac.signal));
+    return () => ac.abort();
+  });
 </script>
 
 <style>

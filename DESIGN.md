@@ -1,189 +1,199 @@
-# DESIGN.md — "Calibration"
+# DESIGN.md — "Approach"
 
-Plan for erzn3522.github.io. The brief is `INITIAL.md`; facts come from `Abdullah Erzin – CV.pdf` (shipped as `/cv.pdf`).
+Redesign of erzn3522.github.io (branch `redesign`). The previous plan, "Calibration", is in git history
+(`git show f5e7bf0:DESIGN.md`). Facts still come only from `Abdullah Erzin – CV.pdf`; the confidentiality
+rules for Pek Automotive work (synthetic scenes and schematics only) are unchanged.
 
-## Subject, audience, job
+## Phase 0: Brief
 
-- **Subject:** a computer vision engineer whose work sits between a camera and a robot arm: calibration, stereo depth, detection, field deployment.
-- **Audience:** hiring managers and senior CV/robotics engineers in Slovenia and Europe. 30–60 seconds, then maybe one project.
-- **Job:** say what he does in five seconds, prove it is real in thirty (numbers, method, figures), one click to email or download the CV.
+- **Subject:** Abdullah Erzin, computer vision engineer. Stereo depth, camera-to-arm calibration, detection
+  and segmentation, field deployment of harvesting robots; earlier face liveness, SLAM, thermal NDT; self-study
+  of backprop and attention.
+- **Audience:** hiring managers and senior CV / robotics / applied ML engineers in Slovenia and Europe.
+  30 to 60 seconds, then one project.
+- **Job:** say what he does in five seconds, prove it is real in thirty (numbers, method, live figures),
+  one action to email or download the CV.
+- **Assets:** CV, eight project write-ups, four interactive figures (stereo hero, thermal, backprop,
+  attention), eight schematic SVGs. No photos (confidential employer work). All kept.
+- **Constraints:** static GitHub Pages, no third-party scripts at runtime, fonts self-hosted, Lighthouse
+  95+ was the old bar and stays the bar.
 
-## Tokens
+## Phase 1: Concept
 
-### Color
-
-| Token | Light | Dark | Role |
+| | A. Approach (material: depth) | B. Stereo pair (material: disparity) | C. Tolerance (process: calibration) |
 |---|---|---|---|
-| `--board` | `#E8ECE9` | `#0F181D` | page ground (matte calibration board) |
-| `--ink` | `#17262F` | `#E3EAE6` | text |
-| `--leaf` | `#2D6A4F` | `#6FBF98` | links, focus ring |
-| `--detect` | `#D7332A` | `#FF6B5E` | bounding boxes only |
-| `--on-detect` | `#FFFFFF` | `#0F181D` | text on a detection label chip |
-| `--mute` | `#5A6864` | `#93A4A0` | secondary text |
-| `--rule` | `#C3CCC8` | `#26363D` | hairlines between real items |
+| Idea | The visitor is a picking arm closing in on a target: scrolling takes every page from 7.5 m to within reach, a depth readout reports the distance, and the accent follows the depth colormap from far blue to near red | Everything is shown twice, as the left and right eye see it, offset by its depth; the page fuses into one image as you look | The site starts out of calibration (distorted grid, large error) and converges until everything sits inside the 10 mm threshold |
+| Anchor | He builds depth estimation for robots that pick fruit; 0.9 to 7.5 m is the hero scene's real range | Stereo liveness and stereo depth | 5 mm max error against a 10 mm threshold |
+| Layout rule | Each page is a depth axis: top is far, the contact block is in reach | Two offset layers per element | Grid that straightens |
+| Motion verb | lock on (a box contracts onto its target) | fuse | snap into register |
+| Signature | Depth rail + colormap accent driven by scroll; detection box locks onto the email at the end | Name as two copies converging with the pointer | Barrel distortion removed by scroll (GL) |
+| O / F / Fe / P | 4 / 5 / 5 / 2 | 3 / 4 / 4 / 3 (reads as an RGB split glitch) | 4 / 4 / 3 / 2 (old site was already "Calibration") |
 
-The depth colormap (blue → green → yellow → red, mapped on inverse depth so near is red) lives only inside the hero scene and its legend.
+**Pick A.** It fits the work best (depth + picking), it extends the hero scene everyone already liked
+instead of competing with it, and it is cheap to build well without WebGL. From C: the 404 is a frame with
+no valid depth.
+
+### Concept card
+
+```
+Idea:        Reading the site is a picking arm approaching its target: far at the top, within reach at contact.
+Metaphor:    a depth sensor on a harvesting arm (readout in metres, depth colormap, detection boxes).
+Signature:   the depth driver: a rail on the right edge and the site accent follow one variable Z (scroll
+             progress on an inverse-depth scale, 7.5 m → 0.40 m); at the contact block the readout says
+             "In reach" and a detection box locks onto the email. Recipe: patterns.md driver module.
+Emotion:     calm precision, then a click of arrival.
+Motion verb: lock on. Boxes contract from loose to tight around what you point at; reveals settle in place.
+Screenshot:  the hero: wide display headline over the stereo orchard, depth rail glowing blue at 7.50 m.
+```
+
+Idle input: **sensor noise.** At rest the readout's last digit jitters with σ = 2 mm (the calibration's own
+standard deviation) a few times a second and the rail marker breathes by a pixel. A real depth sensor never
+reads the same twice. Off under reduced motion.
+
+## Phase 2: Art direction
+
+### Palette ("no-depth black")
+
+A depth frame paints invalid pixels black; the site is that frame. One committed dark theme (the theme toggle
+is removed: the colormap accent only holds contrast on a dark ground).
+
+| Role | Hex | Use |
+|---|---|---|
+| ground (`--c-bg`) | `#0B0D0F` | page |
+| ink (`--c-fg`) | `#E9ECE6` | text (16.9:1) |
+| muted (`--c-muted`) | `#959D9F` | secondary text (7.4:1) |
+| line (`--c-line`) | `rgb(233 236 230 / 0.14)` | hairlines between real items |
+| depth (`--c-depth`) | driver: `#5B8CFF → #36B5D8 → #4CC97F → #E3D34A → #F59A45 → #FF5A4E` | rail, boxes, focus ring, link underlines. Every stop ≥ 5:1 on ground |
+| curtain | `#000000` | page transition |
+
+Legacy token names (`--board --ink --leaf --detect --on-detect --mute --rule`) are kept as aliases so the
+interactive figures and the schematic SVGs inherit the new palette.
 
 ### Type
 
-- **Archivo Variable** for headings, name, dates, UI. Name and headings: `font-stretch: 112%`, `wght 700`, tracking `-0.01em`. Dates and side notes: `font-stretch: 100%`, `wght 500`, `font-variant-numeric: tabular-nums`.
-- **Source Serif 4 Variable** for body: 18px → 19px at desktop, line-height 1.6, measure 66ch.
-- Modular scale, ratio 1.25 on an 18px base:
-  `--step--1 .9rem · --step-0 1.125rem · --step-1 1.406rem · --step-2 1.758rem · --step-3 2.197rem · --step-4 2.747rem · --step-5 3.433rem`
-  (the middle dots here are documentation, not page chrome).
+One family, **Archivo Variable** (already self-hosted, axes `wdth` 62–125 and `wght` 100–900). Width is the
+hierarchy: wide is near and loud, condensed is far and quiet.
 
-### Layout
+- Display: `wdth 125`, `wght 800`, tracking −0.035em at mega, leading 0.92.
+- Headings: `wdth 112`, `wght 700`, tracking −0.015em.
+- Text: `wdth 100`, `wght 400`, 17 → 18 px, leading 1.55, measure 62ch.
+- Readouts and meta: `wdth 75`, `wght 500`, tabular figures, 12–14 px. Only real data (dates, depths, places).
+- Source Serif is dropped (saves a 51 KB font file).
 
-- Max width 1360px, 12 columns, 24px gutter, side padding `clamp(16px, 4vw, 48px)`.
-- **Margin column = cols 1–3**: dates, employer, side notes. **Content = cols 4–12**, body text capped at 66ch.
-- Everything left-aligned. Below 860px the margin column stacks above its content.
-- Square corners everywhere (a calibration board has no rounded squares). No shadows.
+Scale: `--t-mega clamp(3rem, 0.9rem + 8.6vw, 9.5rem)`, `--t-xl clamp(2.25rem, 1.2rem + 4.2vw, 5.25rem)`,
+`--t-l clamp(1.6rem, 1.2rem + 1.8vw, 2.75rem)`, `--t-m clamp(1.2rem, 1.05rem + 0.6vw, 1.55rem)`,
+`--t-body clamp(1.0625rem, 1rem + 0.2vw, 1.125rem)`, `--t-s 0.875rem`, `--t-xs 0.75rem`.
 
-### Principles
+### Grid and rhythm
 
-1. **One moving thing.** The hero stereo scene is the only element that moves, and only when the visitor moves it.
-2. **Structure is data.** Hairlines separate items in a list, the timeline line exists because experience is a sequence, the pick-order numbers in one figure exist because picking is a sequence. Nothing is drawn for decoration.
-3. **Show the method honestly.** Figures are labelled schematics drawn in code, never photos, never invented data. Where a figure shows numbers, they are the CV's numbers.
-4. **Margin notes, not labels.** Context (employer, years, tools) sits in the left margin in quiet Archivo, never as an eyebrow above a heading.
+12 columns, gutter `clamp(1rem, 0.6rem + 1.6vw, 2.25rem)`, max 1440, side pad `clamp(16px, 4vw, 56px)`.
+Three hanging lines: col 1 (meta), col 4 (text), col 9 (figures). Section spacing moods: tight (hero to
+work), airy (work to experience), full viewport (contact). The rail lives in the right pad and never
+touches content.
 
-## Wireframes
+### Shape and motion
 
-### Hero (1440)
+- Radius 0 everywhere; boxes are detection boxes.
+- Ease family: GSAP `expo.out` (entrances), `expo.inOut` (curtain), `power3.out` (hover). Lock-on: 0.35 s.
+- Treatments per role (three, no more):
+  1. **Primary links (project rows, CTAs, pager):** a detection box locks on (inset −14px → −6px, opacity 0 → 1)
+     and the label slides 0.4rem toward it.
+  2. **Nav:** a square marker slides under the hovered item; the current section keeps it.
+  3. **Inline links:** underline at rest in `--c-depth`, rising into a band on hover.
+  Utility links (footer socials) change color only.
+- Page transition: a sensor sweep. A black panel sweeps left to right with a 2 px leading edge in
+  `--c-depth`, then leaves to the right.
+- Loader: first visit per session only, 1.1 s floor. The counter reads depth from 20.0 m down to 7.50 m (the
+  hero's far plane), then sweeps off.
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│ ABDULLAH ERZIN (wide 700)          Work  Experience  About  Contact  [Dark]│
-├──────────────────────────────────────────────────────────────────────────┤
-│                              │ ┌──────────────────┬───────────────────┐ │
-│ Computer vision for          │ │ Camera view      │         Depth map │ │
-│ robots that work             │ │  ○ ◌  apples     │  ███ colormap     │ │
-│ outdoors.     (step-5 wide)  │ │ ┌─┐1.42 m        │  ┌─┐2.31 m        │ │
-│                              │ │ └─┘   ◌○         │  └─┘              │ │
-│ I build stereo vision and    │ │              ┃ divider follows X    │ │
-│ detection systems ... Pek    │ └──────────────────┴───────────────────┘ │
-│ Automotive in Slovenia.      │  Synthetic scene. Drag to compare ...    │
-│                              │  near ▕red■■yellow■■green■■blue▏ far     │
-│ [View projects] [Download CV]│  0.8 m   1 m      2 m     4 m    7.5 m   │
-└──────────────────────────────────────────────────────────────────────────┘
-   cols 1–5                          cols 6–12, 4:3 canvas
-```
-
-### Hero (390)
+### Composition plan
 
 ```
-┌────────────────────────┐
-│ ABDULLAH ERZIN  [Dark] │
-│ Work Experience About… │
-│                        │
-│ Computer vision for    │
-│ robots that work       │
-│ outdoors.              │
-│ I build stereo vision… │
-│ [View projects]        │
-│ [Download CV]          │
-│ ┌────────────────────┐ │
-│ │ scene (4:3)        │ │
-│ └────────────────────┘ │
-│ caption + legend       │
-└────────────────────────┘
+HERO (1440)                                                         rail ▕
+┌─────────────────────────────────────────────────────────────────────┐ ▕
+│ Abdullah Erzin                         Work Experience About Contact │ ■ 7.50 m
+│                                                                      │ ▕
+│ COMPUTER VISION FOR ROBOTS                (t-mega, wdth 125, 800)     │ ▕
+│ THAT WORK OUTDOORS.                       sentence case, not caps    │ ▕
+│                                                                      │ ▕
+│ I build stereo vision and  │ ┌──────────────────────────────────────┐│ ▕
+│ detection systems … (col 1–3)│ stereo scene, cols 4–12, 4:3         ││ ▕
+│ [Email me] [Download CV]   │ └──────────────────────────────────────┘│ ▕
+│ Logatec, Slovenia          │ caption + legend                        │ ▕
+└─────────────────────────────────────────────────────────────────────┘
+
+WORK (index list, family 2)
+ Selected work                                               8 projects
+ ───────────────────────────────────────────────────────────────────────
+ Pek Automotive  │ Camera-to-arm calibration for a      │  ┌┄┄┄┄┄┄┐ ← lock-on box
+ 2025 to present │ harvesting robot (t-l wdth 112)      │  │ SVG  │   chip: "5 mm"
+                 │ outcome (muted)                      │  └┄┄┄┄┄┄┘
+ ───────────────────────────────────────────────────────────────────────
+
+EXPERIENCE (data family: years as numerals)
+ 2025        Computer Vision Engineer, Pek Automotive      Logatec, Slovenia
+ (t-xl wdth 75, tabular)  summary · project links
+ 2024        …
+
+ABOUT (statement family)
+ I work between the camera and the robot …  (t-l across cols 4–12)
+ Skills: definition list, two columns
+
+CONTACT (finale, full viewport)
+ In reach.                                    readout: In reach
+ ┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┐
+ │ abdullaherzin80+resume@gmail.com │  ← box locks on as the section arrives
+ └┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘
+ Download CV   GitHub   LinkedIn   Medium
+
+PROJECT PAGE
+ ← All projects                                        Pek Automotive, Apr 2025 to present
+ Camera-to-arm calibration for a harvesting robot   (t-xl, cols 1–10)
+ outcome (t-m, cols 4–10)          tags (cols 1–3)
+ figure (cols 4–12) / interactive
+ prose cols 4–10
+ NEXT PROJECT: giant title as the finale, lock-on on hover
+
+404
+ Depth invalid.  (t-mega)  No surface at this address. Links home and to every project. Rail pinned at "no depth".
 ```
 
-### Home below the hero
+Phone (390): headline at 13vw over three lines, scene full width under the text, rail replaced by a 3 px
+depth bar along the top edge, work rows single column with the schematic inline, years in a row above each role.
 
-```
-Selected work (wide heading, content column)
-───────────────────────────────────────────────────────────────────────────
-Pek Automotive     │ Camera-to-arm calibration for a      │ ┌──────────┐
-2025 – present     │ harvesting robot                     │ │ figure   │ ← hover/focus:
-                   │ 5 mm max positional error (2 mm std) │ │ (SVG)    │   --detect box
-                   │ against a 10 mm production threshold.│ └──────────┘
-───────────────────────────────────────────────────────────────────────────
-… four more rows
+### Genericness test
 
-Experience
-Apr 2025 –         ▪ Computer Vision Engineer, Pek Automotive
-present            │ Logatec, Slovenia. One-line summary. Projects: …
-Mar 2024 –         ▪ Software Engineer, Robsys Robotic Systems
-Mar 2025           │ …
-(dates in margin, tabular; one 1px line with square ticks = the sequence)
+1. First draft: name as the hero image. Every portfolio does that, and a recruiter learns nothing from a name.
+   → The hero states the work; the name sits in the corner.
+2. First draft: dark + one neon accent. That is the "AI engineer" default. → The accent is never one color:
+   it is a reading of a depth sensor and changes with the page, and its endpoints are the hero scene's colormap.
+3. First draft: mono for all labels. → No mono at all; data readouts use Archivo condensed, so width carries
+   meaning (far is narrow).
+4. First draft: a cursor follower with "View". → None. The detection box that locks on is the pointer response
+   and it is the subject's own visual language.
+5. First draft: fade-up on every section. → Only headings use line reveals; rows lock on, nothing else floats in.
 
-About              (3–4 sentences, first person, serif)
-                   Skills as a definition list: Languages / Computer vision / …
+## Build log (decisions that changed during the build)
 
-Contact            abdullaherzin80+resume@gmail.com  (large, Archivo)
-                   Download CV · GitHub · LinkedIn · Medium · Bento  (a plain list)
-```
+- **Nav treatment:** an underline that draws in `--c-depth` (not a sliding marker); the name in the corner
+  uses the same draw. Three treatments site-wide: lock-on (rows, email, next project), draw (nav, name),
+  rising band (inline links). Buttons nudge their label and flood with the depth colour.
+- **Idle:** the readout jitter alone was too small to read as alive. The hero scene now shows its detection
+  boxes by default and they jitter by about a pixel six times a second, like live detections from frame to
+  frame. Paused off screen, while the visitor drives the divider, and under reduced motion. Project pages
+  and the 404 are reading pages and stay still at rest apart from the readout noise: a decision.
+- **LCP:** hero and project titles are never hidden before JS. They only play their line reveal when the
+  loader covers them; otherwise they paint at once. Mobile LCP went from 5.2 s to 0.4 s (throttled).
+- **Loader:** first visit per session, desktop only. Phones get content first.
+- **`--leaf` follows `--c-depth`,** so the schematic figures and the self-study interactives take their
+  highlight from the same driver as the rail.
+- Meta descriptions longer than 160 characters got a `description` field in the project frontmatter.
 
-### Project page
+## Phase 3+: notes
 
-```
-┌───────────────────┬──────────────────────────────────────────────────┐
-│ All projects      │ Camera-to-arm calibration for a                  │
-│                   │ harvesting robot            (step-4 wide 700)    │
-│ Pek Automotive    │ One-sentence outcome with the real number.       │
-│ Apr 2025 – present│ ┌──────────────────────────────────────────────┐ │
-│                   │ │ figure (schematic SVG)                       │ │
-│ Camera calibration│ └──────────────────────────────────────────────┘ │
-│ 3D transforms     │ Caption: what the reader is looking at.          │
-│ UART              │                                                  │
-│                   │ Problem / Approach / Result / What I would do    │
-│                   │ next  (h2 Archivo, serif body, 66ch)             │
-│                   │ [phase-2 demo slot: comment only]                │
-├───────────────────┴──────────────────────────────────────────────────┤
-│ Previous: …                                              Next: …     │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-## The hero scene, technically
-
-- Pure, seeded scene generator in `src/lib/scene.ts`, shared by the server-rendered SVG fallback and the client canvas, so both show the same orchard.
-- Pinhole camera, `f = 900` (in a 1000-unit-wide image), baseline `B = 0.06 m`, camera 0.9 m above the ground. Apples (r = 4 cm) sit on a near branch (≈1 m) and on a tree row (≈2–3 m). Disparity `d = f·B/Z` places each apple's right-camera outline; at 1 m that is 54 units, at 3 m 18.
-- Both views (camera, depth) are rendered once into offscreen canvases on resize. A frame only blits two clipped images, the divider and the boxes, so it costs almost nothing. There is no idle loop: a short easing loop runs while the divider catches up with the pointer and stops when it arrives or the tab is hidden.
-- Input: mouse/pen hover X, touch drag (`touch-action: pan-y` keeps vertical scroll), and a real `<input type="range">` for keyboard. Boxes with depth labels show while the pointer is over the scene or the slider has focus.
-- `prefers-reduced-motion`: no easing; static frame, divider 50%, boxes on. No JS or no 2D context: the SVG stays.
-- DPR capped at 2.
-
-## Plan review against the brief
-
-I checked each decision against "what would I produce for any developer portfolio?"
-
-1. **First draft:** project list as rows with a thumbnail of a stock-looking screenshot. That is the default and also breaks the confidentiality rule. → Each project gets a schematic drawn in SVG that explains the method (tolerance target, depth histogram, pick order, occupancy grid, depth profile).
-2. **First draft:** section headings in the left margin column, small. That turns them into labels. → Headings sit in the content column at full size; the margin is only for information (dates, employer, tools).
-3. **First draft:** a "skills" tag cloud of chips. → Definition list in the CV's own groups.
-4. **First draft:** hero headline big and centred over a full-bleed canvas. → Left-aligned text block beside the scene on desktop; text before scene on mobile so the first screen says what he does.
-5. **First draft:** hover lift + transition on project rows. → No transition. The only hover response is the `--detect` bounding box drawn around the figure, instant, because a detection is instant.
-6. **First draft:** contact as a form. → No backend, no third-party. A large mailto address and a plain list of links.
-
-## What I changed and why
-
-- **Facts follow the current CV, not the brief's summary.** The PDF is newer than `INITIAL.md`. It does not contain "−60% calibration time", "±5mm", "gradient boosting", "linear regression" or "NumPy-array mapping". It does contain "5 mm max positional error (2 mm std) against a 10 mm production threshold", a three-stage camera-to-arm calibration, histogram front-surface depth, YOLO retraining on 700 GB of field recordings, and field deployments in five countries. The brief names the CV as the source of truth, so the site uses the CV. Numbers are written as the CV writes them: `4 KB`, `30 ms`, `98%`, `30%`.
-- **Project list reshaped to what the CV supports.** The brief's "stereo calibration" and "camera-to-arm transform" are one piece of work in the CV, so they became one page (`camera-to-arm-calibration`). The freed slot went to the end-to-end perception-to-picking pipeline (`harvesting-pipeline`), the CV's lead bullet. `detection-pipeline` now covers depth accuracy, exposure control and YOLO retraining.
-- **Location:** the CV header says Logatec, Slovenia, which answers open question 1.
-- **`--mute` darkened** from `#6B7B78` to `#5A6864`: the brief's value is 3.7:1 on `--board`; the new one is 4.9:1. Dark `--mute` passes as given (6.8:1).
-- **Added `--on-detect`.** White text on the dark-theme `#FF6B5E` chip is 2.8:1; dark text is 6.4:1.
-- **Colormap on inverse depth** (disparity-proportional), so the near apples, the interesting part, get most of the color range, and the legend shows real meter ticks.
-
-## Critique log (screenshot passes)
-
-1. **Pass 1.** The near branch filled a third of the scene and hid the tree row; few apples on the depth side; legend ticks at 5 m and 7.5 m collided. → Near branches made smaller and lifted, trees re-spaced, every tree guaranteed fruit, apple count 20 → 16, legend ticks reduced to 1, 1.5, 2, 3, 7.5 m.
-2. **Pass 2.** Canopy sat too high and the bottom half was empty ground; depth labels overlapped in the near cluster. → Canopy and fruit lowered so the "no depth" sky band reads at the top; labels are placed nearest-first and a label that would cover another is skipped (its box stays). Same rule in the SVG fallback.
-3. **Pass 3.** Figure text dropped to ~9px at 390px; figures were oversized at 1440px; "2023 – 2023" on a one-year role; screen readers heard the employer before the project title. → 22px figure text under 600px with labels moved inward; figures capped at 48rem; single-year periods collapse; title first in the DOM, visual order kept with grid.
-4. **Performance.** Lighthouse mobile on home was 91. → Source Serif switched from the `opsz` files (122 KB) to `wght` (51 KB), italic file dropped, CSS inlined, the two Latin font files preloaded. Home now 98 / 100 / 100 / 100; project pages 100 across.
-5. **Removed one accessory.** The footer line "No analytics, no cookies." announced the quality floor instead of just having it.
-
-## Addition: thermal NDT project (requested by Abdullah)
-
-A sixth project page with a second interactive figure, built like the hero: a synthetic PLA plate after a flash, thermal frame left of the divider, Fourier phase image right of it, a time slider, and two charts (cooling curves, contrast over each crack). This departs from the brief's "one memorable thing" on request; on the home page it stays a quiet row with a static schematic.
-
-- The thermal frame uses an iron palette (black → purple → orange → white), a different colormap from the hero's depth map, so the brief's rule that the depth colormap appears only in the hero still holds.
-- The model is physical but simplified: 1D flash heating (surface cools as 1/√t), reflection from a crack at depth L appearing from t ≈ L²/α, lateral washout, multiplicative uneven lamp heating that the phase removes. The Fourier transform is linear in the crack weights, so the phase image is computed in one pass per pixel.
-- Phase is shown as magnitude on a log scale above the noise floor, because the sign of the phase shift can flip with depth at a fixed frequency.
-
-## Addition: self-study page (backprop and attention)
-
-Requested by Abdullah to show command of the concepts rather than results. Two interactives inside the text, both computed live, both event-driven with no idle motion:
-
-- **Backprop:** one neuron with every forward value (ink) and backward gradient (leaf) on a computation graph, a loss curve with its tangent, and a "Take a gradient step" button. The sigmoid + cross-entropy cancellation (∂L/∂z = ŷ − y) is the centre of the explanation.
-- **Attention:** six Turkish tokens, arcs whose width is the attention weight, a heatmap matrix, a BERT/GPT causal-mask switch and a √d switch. Scores are hand-set toys and the caption says so.
-- Colour: single-hue `--leaf` ramp; the depth colormap stays exclusive to the hero and `--detect` is not used, since nothing is detected.
-- On phones the computation graph keeps a readable size and scrolls sideways inside its own box. `.split` now uses `minmax(0, 1fr)` so wide children can never widen the page.
+- Stack: existing Astro 7 project, plus GSAP (ScrollTrigger, SplitText), Lenis and the ClientRouter. No WebGL:
+  the concept is a measurement, the hero canvas already carries the imagery.
+- The interactive figures now init through `onPage()` and return cleanups, because the ClientRouter swaps
+  pages without reloading scripts.
+- Reduced motion: native scroll, no loader theatrics, no reveals, no idle noise; the driver still maps scroll
+  to the accent and the rail (state, not motion).

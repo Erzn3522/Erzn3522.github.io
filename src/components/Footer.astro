@@ -4,13 +4,54 @@ const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer wrap">
-  <p class="note">
-    {site.name}, {site.location}. {year}.
+  <p class="meta">{site.name}, {site.location}, {year}</p>
+  <ul class="meta" role="list">
+    {site.links.map((l) => (
+      <li><a href={l.href} rel="me">{l.label}</a></li>
+    ))}
+  </ul>
+  <p class="meta colophon">
+    Set in Archivo. Every scene and figure on this site is drawn in code; no employer data or imagery.
   </p>
 </footer>
 
 <style>
   .site-footer {
-    padding-block: var(--space-4) var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    padding-block: var(--space-4) var(--space-4);
+    border-top: 1px solid var(--c-line);
+    margin-top: var(--space-5);
+  }
+
+  ul {
+    display: flex;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  ul a {
+    display: inline-block;
+    padding-block: 0.3rem;
+    background: linear-gradient(var(--c-depth) 0 0) left calc(100% - 0.15rem) / 0% 1px no-repeat;
+    transition: background-size 0.45s cubic-bezier(0.165, 0.84, 0.44, 1), color 0.3s;
+  }
+
+  @media (hover: hover) {
+    ul a:hover {
+      color: var(--c-fg);
+      background-size: 100% 1px;
+    }
+  }
+
+  ul a:focus-visible {
+    color: var(--c-fg);
+    background-size: 100% 1px;
+  }
+
+  .colophon {
+    flex-basis: 100%;
   }
 </style>

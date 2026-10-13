@@ -1,39 +1,51 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Loader from '../components/Loader.astro';
+import DepthRail from '../components/DepthRail.astro';
 import { site } from '../lib/site';
 import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
-import serifLatin from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2?url';
 
 interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** "invalid" pins the depth driver to "No depth" (the 404) */
+  depth?: 'invalid';
 }
 
-const { title, description = site.description, noindex = false } = Astro.props;
+const { title, description = site.description, noindex = false, depth } = Astro.props;
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name}, computer vision engineer`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL('/og.png', Astro.site);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.role,
+  url: Astro.site?.href,
+  email: `mailto:${site.email}`,
+  address: { '@type': 'PostalAddress', addressLocality: 'Logatec', addressCountry: 'SI' },
+  sameAs: site.links.map((l) => l.href),
+};
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={serifLatin} as="font" type="font/woff2" crossorigin />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#E8ECE9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F181D" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0b0d0f" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
@@ -46,27 +58,90 @@ const ogImage = new URL('/og.png', Astro.site);
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <script is:inline>
-      // Apply a saved theme before first paint. Storage can be unavailable.
+      // Before first paint: flag JS + motion so hidden-until-revealed states never flash.
+      // The loader plays once per session, on the home page, on wide screens.
+      var h = document.documentElement;
+      h.classList.add('js');
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) h.classList.add('motion');
       try {
-        var t = localStorage.getItem('theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        if (sessionStorage.getItem('loaded')) h.classList.add('no-loader');
       } catch (e) {}
+      if (matchMedia('(max-width: 767px)').matches || location.pathname !== '/') h.classList.add('no-loader');
     </script>
+    <ClientRouter fallback="swap" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <div id="curtain" transition:persist="curtain" aria-hidden="true">
+      <div class="curtain__panel">
+        <p class="curtain__label">
+          <span class="curtain__z" data-curtain-z>Z 7.500 m</span>
+          <span class="curtain__title" data-curtain-title></span>
+        </p>
+      </div>
+    </div>
+    <Loader />
+    <DepthRail />
     <Header />
-    <main id="main" tabindex="-1">
+    <main id="main" tabindex="-1" data-depth={depth}>
       <slot />
     </main>
     <Footer />
+    <script>
+      import { start } from '../engine/astro';
+      import { setupMotion } from '../motion/setup';
+      start(setupMotion);
+    </script>
   </body>
 </html>
 
-<style>
-  main:focus {
-    outline: none;
+<style is:global>
+  /* Curtain (page transitions): a black band with depth-coloured edges */
+  #curtain {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-curtain);
+    pointer-events: none;
+    visibility: hidden;
+    overflow: hidden;
+  }
+
+  /* No CSS transform here: GSAP owns it. */
+  .curtain__panel {
+    position: absolute;
+    inset: 0;
+    background: var(--c-curtain);
+    border-inline: 2px solid var(--c-depth);
+  }
+
+  .curtain__label {
+    position: absolute;
+    left: var(--pad);
+    right: var(--pad);
+    bottom: var(--pad);
+    display: grid;
+    gap: 0.6rem;
+    color: var(--c-fg);
+  }
+
+  .curtain__z {
+    font-size: var(--t-s);
+    font-stretch: 75%;
+    font-weight: 600;
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .curtain__title {
+    max-width: 20ch;
+    font-size: var(--t-xl);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
   }
 </style>

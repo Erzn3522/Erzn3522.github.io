@@ -10,114 +10,95 @@ const nav = [
 ---
 
 <header class="site-header wrap">
-  <a class="name" href="/">{site.name}</a>
+  <a class="name" href="/">
+    <span class="name__full">{site.name}</span>
+    <span class="name__role">Computer vision engineer, {site.location}</span>
+  </a>
   <nav aria-label="Main">
-    <ul>
+    <ul role="list">
       {nav.map((item) => (
-        <li><a href={item.href}>{item.label}</a></li>
+        <li><a class="draw" href={item.href}>{item.label}</a></li>
       ))}
     </ul>
   </nav>
-  <button class="theme" type="button" data-theme-toggle hidden>
-    <span data-theme-label>Dark theme</span>
-  </button>
 </header>
-
-<script>
-  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
-  const label = document.querySelector<HTMLElement>('[data-theme-label]');
-  const root = document.documentElement;
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
-
-  const current = () => root.dataset.theme ?? (media.matches ? 'dark' : 'light');
-
-  function render() {
-    if (!button || !label) return;
-    const next = current() === 'dark' ? 'light' : 'dark';
-    label.textContent = next === 'dark' ? 'Dark theme' : 'Light theme';
-    button.setAttribute('aria-label', `Switch to ${next} theme`);
-  }
-
-  if (button) {
-    button.hidden = false;
-    button.addEventListener('click', () => {
-      const next = current() === 'dark' ? 'light' : 'dark';
-      root.dataset.theme = next;
-      try {
-        localStorage.setItem('theme', next);
-      } catch {
-        // Storage blocked: the choice lasts for this page view only.
-      }
-      render();
-      window.dispatchEvent(new CustomEvent('themechange'));
-    });
-    media.addEventListener('change', render);
-    render();
-  }
-</script>
 
 <style>
   .site-header {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-3);
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
     padding-block: var(--space-3);
   }
 
   .name {
-    font-family: var(--font-head);
-    font-stretch: 112%;
-    font-weight: 700;
-    font-size: var(--step-1);
-    letter-spacing: -0.01em;
-    color: var(--ink);
-    text-decoration: none;
-    margin-right: auto;
+    display: grid;
+    gap: 0.1rem;
+    line-height: 1.1;
+  }
+
+  .name__full {
+    font-size: var(--t-m);
+    font-stretch: 118%;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  .name__role {
+    font-size: var(--t-s);
+    font-stretch: 75%;
+    font-weight: 500;
+    color: var(--c-muted);
   }
 
   nav ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 1.4rem;
+    gap: 0.25rem clamp(1rem, 2vw, 2rem);
     list-style: none;
-    margin: 0;
-    padding: 0;
+    padding-top: 0.2rem;
   }
 
-  nav a,
-  .theme {
-    font-family: var(--font-head);
-    font-size: var(--step--1);
-    font-weight: 500;
-    color: var(--ink);
-  }
-
-  nav a {
-    text-decoration: none;
+  /* Nav: the underline draws in the depth colour; focus keeps it */
+  .draw {
     display: inline-block;
     padding-block: 0.4rem;
+    font-size: var(--t-body);
+    font-stretch: 100%;
+    font-weight: 550;
+    background: linear-gradient(var(--c-depth) 0 0) left calc(100% - 0.2rem) / 0% 2px no-repeat;
+    transition: background-size 0.45s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
 
-  nav a:hover {
-    text-decoration: underline;
+  .name__full {
+    justify-self: start;
+    background: linear-gradient(var(--c-depth) 0 0) left 100% / 0% 2px no-repeat;
+    transition: background-size 0.45s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
 
-  .theme {
-    background: none;
-    border: 1px solid var(--rule);
-    padding: 0.4rem 0.7rem;
-    cursor: pointer;
+  @media (hover: hover) {
+    .draw:hover,
+    .name:hover .name__full {
+      background-size: 100% 2px;
+    }
   }
 
-  .theme:hover {
-    border-color: var(--ink);
+  .name:focus-visible .name__full {
+    background-size: 100% 2px;
+  }
+
+  .draw:focus-visible {
+    background-size: 100% 2px;
   }
 
   @media (max-width: 640px) {
     nav {
-      order: 3;
       width: 100%;
+    }
+    nav ul {
+      justify-content: space-between;
     }
   }
 </style>

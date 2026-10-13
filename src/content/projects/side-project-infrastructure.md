@@ -4,6 +4,7 @@ outcome: Building an unreleased side project with reproducible Docker environmen
 order: 8
 employer: Independent side project
 period: In development
+description: Reproducible Docker environments and an automated CI/CD workflow for an unreleased side project, with product details kept private.
 tags:
   - Docker
   - CI/CD

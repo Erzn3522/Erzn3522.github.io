@@ -5,52 +5,91 @@ import Base from '../layouts/Base.astro';
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Base title="Page not found" noindex>
+<Base title="Page not found" noindex depth="invalid">
   <section class="missing wrap">
-    <div class="split">
-      <div class="content">
-        <h1>There is no page at this address.</h1>
-        <p class="lead">
-          The link may be from the old version of this site, or it may have a typo. Everything that
-          was here now lives on the <a href="/">home page</a> or on one of the project pages.
-        </p>
-        <h2>Projects</h2>
-        <ul>
-          {projects.map((p) => <li><a href={`/projects/${p.id}`}>{p.data.title}</a></li>)}
-        </ul>
-      </div>
+    <div class="frame" aria-hidden="true">
+      <span class="frame__label">No valid depth in this frame</span>
     </div>
+    <h1 class="title">Nothing at this address.</h1>
+    <p class="lead">
+      The link may be from the old version of this site, or it may have a typo. Everything that was
+      here now lives on the <a class="link" href="/">home page</a> or on one of the project pages.
+    </p>
+    <h2 class="meta list-title">Projects</h2>
+    <ul class="list" role="list">
+      {projects.map((p) => <li><a class="link" href={`/projects/${p.id}`}>{p.data.title}</a></li>)}
+    </ul>
   </section>
 </Base>
 
 <style>
   .missing {
-    padding-block: var(--space-5);
+    padding-block: var(--space-4) var(--space-5);
   }
 
-  h1 {
-    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
+  /* An empty depth frame: invalid pixels are black, so the sensor sees only its own grid */
+  .frame {
+    position: relative;
+    aspect-ratio: 16 / 5;
+    max-height: 34vh;
+    width: 100%;
+    background:
+      linear-gradient(var(--c-line) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, var(--c-line) 1px, transparent 1px) 0 0 / 40px 40px,
+      #000;
+    border: 1px solid var(--c-line);
+  }
+
+  .frame__label {
+    position: absolute;
+    left: 0.8rem;
+    bottom: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    background: var(--c-bg);
+    border: 1px solid var(--c-line);
+    font-size: var(--t-s);
+    font-stretch: 75%;
+    font-weight: 600;
+    color: var(--c-muted);
+  }
+
+  .title {
+    margin-top: var(--space-5);
+    font-size: var(--t-xl);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
     max-width: 16ch;
   }
 
   .lead {
     margin-top: var(--space-3);
     max-width: 52ch;
-    font-size: var(--step-1);
-    line-height: 1.5;
+    font-size: var(--t-m);
+    line-height: 1.45;
   }
 
-  h2 {
+  .list-title {
     margin-top: var(--space-5);
-    font-size: var(--step-2);
+    font-size: var(--t-s);
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 
-  ul {
+  .list a {
+    display: inline-block;
+    padding-block: 0.2rem;
+  }
+
+  .lead a {
+    padding-block: 0.15rem;
+  }
+
+  .list {
+    list-style: none;
     margin-top: var(--space-2);
-    padding-left: 1.1em;
-  }
-
-  li + li {
-    margin-top: 0.4rem;
+    display: grid;
+    gap: 0.6rem;
   }
 </style>

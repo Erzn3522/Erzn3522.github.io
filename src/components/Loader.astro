@@ -1,0 +1,87 @@
+---
+// First-load moment: the depth sensor acquires the scene. The engine reads the data-* hooks:
+//   [data-loader-count] counter text, [data-loader-bar] scaleX 0→1, [data-loader-out] exits first.
+import { site } from '../lib/site';
+---
+
+<div id="loader" role="status" aria-label="Loading">
+  <div class="loader__inner">
+    <p class="loader__name" data-loader-out>
+      {site.name}<span class="loader__role">Computer vision engineer</span>
+    </p>
+    <p class="loader__count" data-loader-out>
+      <span class="loader__z" aria-hidden="true">Z</span>
+      <span data-loader-count>20.00 m</span>
+    </p>
+  </div>
+  <div class="loader__bar" data-loader-bar></div>
+</div>
+
+<style>
+  #loader {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-loader);
+    display: grid;
+    align-content: end;
+    padding: var(--pad);
+    background: var(--c-curtain);
+    color: var(--c-fg);
+    clip-path: inset(0% 0% 0% 0%);
+  }
+
+  :global(html:not(.js)) #loader,
+  :global(html.no-loader) #loader,
+  #loader[hidden] {
+    display: none;
+  }
+
+  .loader__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: var(--space-2);
+    overflow: hidden;
+  }
+
+  .loader__name {
+    display: grid;
+    font-size: var(--t-m);
+    font-stretch: 112%;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .loader__role {
+    font-size: var(--t-s);
+    font-stretch: 75%;
+    font-weight: 500;
+    color: var(--c-muted);
+  }
+
+  .loader__count {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3em;
+    font-size: var(--t-xl);
+    font-stretch: 75%;
+    font-weight: 600;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loader__z {
+    font-size: 0.4em;
+    color: var(--c-muted);
+  }
+
+  .loader__bar {
+    height: 2px;
+    margin-top: var(--space-3);
+    background: linear-gradient(90deg, #5b8cff, #36b5d8);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+</style>

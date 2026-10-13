@@ -1,12 +1,13 @@
 // Hero stereo scene: camera view left of the divider, depth map right of it.
-// Rendering is event-driven; a short easing loop runs only while the divider
-// catches up with the pointer, and never when the tab is hidden.
+// Rendering is event-driven; a short easing loop runs on the GSAP ticker only while
+// the divider catches up with the pointer, and never when the tab is hidden.
 
+import { gsap } from 'gsap';
 import { buildScene, drawView, depthLabel, W, H, type Scene } from '../lib/scene';
 
 const MAX_DPR = 2;
 
-export function initHero(root: HTMLElement) {
+export function initHero(root: HTMLElement, signal: AbortSignal) {
   const frame = root.querySelector<HTMLElement>('[data-frame]');
   const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]');
   const fallback = root.querySelector<HTMLElement>('[data-fallback]');
@@ -30,7 +31,7 @@ export function initHero(root: HTMLElement) {
   let pos = 0.5;
   let hovering = false;
   let focused = false;
-  let raf = 0;
+  let running = false;
   let detect = '#d7332a';
   let onDetect = '#ffffff';
   let size = { w: 0, h: 0, px: 1 };
@@ -41,7 +42,14 @@ export function initHero(root: HTMLElement) {
     onDetect = css.getPropertyValue('--on-detect').trim() || onDetect;
   };
 
-  const showBoxes = () => reduce.matches || hovering || focused;
+  // Boxes are always on: the scene reads as a live detector. At rest they jitter by about a
+  // pixel a few times a second, like detections from frame to frame (idle input; off under
+  // reduced motion and while the scene is off screen).
+  const showBoxes = () => true;
+  const JITTER_HZ = 6;
+  let noise = scene.apples.map(() => ({ dx: 0, dy: 0, ds: 0 }));
+  let onScreen = false;
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
   function resize() {
     const w = frame!.clientWidth;
@@ -97,12 +105,15 @@ export function initHero(root: HTMLElement) {
     g.font = `600 ${12 * px}px "Archivo Variable", system-ui, sans-serif`;
     g.textBaseline = 'alphabetic';
     const pad = 4 * s;
-    const boxes = scene.apples.map((a) => ({
-      a,
-      x: (a.u - a.r) * s - pad,
-      y: (a.v - a.r) * s - pad,
-      side: a.r * 2 * s + pad * 2,
-    }));
+    const boxes = scene.apples.map((a, i) => {
+      const n = noise[i];
+      return {
+        a,
+        x: (a.u - a.r + n.dx) * s - pad,
+        y: (a.v - a.r + n.dy) * s - pad,
+        side: (a.r * 2 + n.ds) * s + pad * 2,
+      };
+    });
     for (const b of boxes) {
       g.lineWidth = 4 * px;
       g.strokeStyle = 'rgba(255,255,255,0.7)';
@@ -114,7 +125,11 @@ export function initHero(root: HTMLElement) {
     // Labels nearest first; skip one that would cover a label already placed
     const th = 17 * px;
     const taken: [number, number, number, number][] = [];
+    // At rest only the nearest few carry a label (fewer on phones); all of them while the visitor
+    // drives the scene
+    const maxLabels = hovering || focused ? Infinity : size.w < 600 ? 3 : 8;
     for (const b of [...boxes].reverse()) {
+      if (taken.length >= maxLabels) break;
       const text = depthLabel(b.a.Z);
       const tw = g.measureText(text).width + 8 * px;
       const r: [number, number, number, number] = [b.x - px, b.y - th, tw, th];
@@ -127,21 +142,27 @@ export function initHero(root: HTMLElement) {
     }
   }
 
+  const stop = () => {
+    if (running) gsap.ticker.remove(tick);
+    running = false;
+  };
+
   function tick() {
-    raf = 0;
-    if (document.hidden) return;
+    if (document.hidden) return stop();
     const diff = target - pos;
     if (reduce.matches || Math.abs(diff) < 0.0008) {
       pos = target;
+      stop();
     } else {
-      pos += diff * 0.25;
-      raf = requestAnimationFrame(tick);
+      pos += diff * (1 - Math.pow(0.75, gsap.ticker.deltaRatio()));
     }
     draw();
   }
 
   const request = () => {
-    if (!raf && !document.hidden) raf = requestAnimationFrame(tick);
+    if (running || document.hidden) return;
+    running = true;
+    gsap.ticker.add(tick);
   };
 
   const setTarget = (t: number) => {
@@ -186,31 +207,54 @@ export function initHero(root: HTMLElement) {
     request();
   });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && raf) {
-      cancelAnimationFrame(raf);
-      raf = 0;
-    } else {
-      request();
-    }
-  });
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.hidden) stop();
+      else request();
+    },
+    { signal },
+  );
 
-  const recolor = () => {
-    readColors();
+  reduce.addEventListener(
+    'change',
+    () => {
+      if (reduce.matches) setTarget(0.5);
+      draw();
+    },
+    { signal },
+  );
+
+  // Idle: re-sample the detection noise a few times a second while the scene is visible
+  let acc = 0;
+  const idle = (_t: number, dt: number) => {
+    acc += dt / 1000;
+    if (acc < 1 / JITTER_HZ) return;
+    acc = 0;
+    if (!onScreen || document.hidden || reduce.matches || hovering || focused) return;
+    noise = scene.apples.map(() => ({ dx: gauss() * 0.9, dy: gauss() * 0.9, ds: gauss() * 0.8 }));
     draw();
   };
-  window.addEventListener('themechange', recolor);
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
-  reduce.addEventListener('change', () => {
-    if (reduce.matches) setTarget(0.5);
-    draw();
+  gsap.ticker.add(idle);
+  const io = new IntersectionObserver(([e]) => {
+    onScreen = e.isIntersecting;
+  });
+  io.observe(frame);
+  signal.addEventListener('abort', () => {
+    gsap.ticker.remove(idle);
+    io.disconnect();
   });
 
   readColors();
   canvas.hidden = false;
   slider.hidden = false;
   fallback.hidden = true;
-  new ResizeObserver(resize).observe(frame);
+  const ro = new ResizeObserver(resize);
+  ro.observe(frame);
+  signal.addEventListener('abort', () => {
+    ro.disconnect();
+    stop();
+  });
   resize();
   document.fonts?.ready.then(() => draw());
 }

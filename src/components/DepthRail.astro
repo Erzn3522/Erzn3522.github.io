@@ -1,0 +1,128 @@
+---
+// The depth driver's instrument: a rail in the right margin (wide screens) and a bar along the
+// top edge (narrow screens). Ticks sit at real depths on the same inverse-depth scale as the
+// driver. Decorative for assistive tech: the page itself carries all the content.
+import { Z_FAR, Z_REACH } from '../motion/depth';
+
+const at = (z: number) => (1 / z - 1 / Z_FAR) / (1 / Z_REACH - 1 / Z_FAR);
+const ticks = [7.5, 3, 1.5, 1, 0.7, 0.5].map((z) => ({ z, pos: (at(z) * 100).toFixed(2) }));
+---
+
+<div class="rail" aria-hidden="true" transition:persist="rail">
+  <div class="rail__track">
+    {ticks.map((t) => (
+      <span class="rail__tick" style={`--pos:${t.pos}`}>
+        <span>{t.z}</span>
+      </span>
+    ))}
+    <span class="rail__marker" data-rail-marker>
+      <span class="rail__readout" data-depth-readout>Z 7.500 m</span>
+    </span>
+  </div>
+</div>
+<div class="depth-bar" aria-hidden="true" transition:persist="depth-bar"><span data-depth-bar></span></div>
+
+<style>
+  .rail {
+    display: none;
+  }
+
+  @media (min-width: 1200px) {
+    .rail {
+      --rail-h: 62vh;
+      display: block;
+      position: fixed;
+      right: 24px;
+      top: calc(50vh - var(--rail-h) / 2);
+      z-index: var(--z-rail);
+      height: var(--rail-h);
+      width: 1px;
+      pointer-events: none;
+    }
+  }
+
+  .rail__track {
+    position: absolute;
+    inset: 0;
+    background: var(--c-line);
+  }
+
+  .rail__tick {
+    position: absolute;
+    left: 0;
+    top: calc(var(--pos) * 1%);
+    width: 5px;
+    height: 1px;
+    background: var(--c-muted);
+  }
+
+  .rail__tick > span {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    translate: 0 -50%;
+    font-size: 0.75rem;
+    font-stretch: 75%;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The driver writes translate; the marker never takes a CSS transform. */
+  .rail__marker {
+    position: absolute;
+    left: -4px;
+    top: -4px;
+    width: 9px;
+    height: 9px;
+    background: var(--c-depth);
+  }
+
+  /* Vertical, so it fits in the side margin and never reaches the content columns */
+  .rail__readout {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    translate: 0 -50%;
+    writing-mode: vertical-rl;
+    rotate: 180deg;
+    padding: 0.35rem 0.1rem;
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: var(--t-xs);
+    font-stretch: 75%;
+    font-weight: 600;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    border-top: 2px solid var(--c-depth);
+  }
+
+  .rail__z {
+    color: var(--c-muted);
+  }
+
+  .depth-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: var(--z-rail);
+    height: 3px;
+    pointer-events: none;
+  }
+
+  .depth-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--c-depth);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  @media (min-width: 1200px) {
+    .depth-bar {
+      display: none;
+    }
+  }
+</style>

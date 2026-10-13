@@ -3,209 +3,263 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Diagram from '../../components/Diagram.astro';
 import ThermalScene from '../../components/ThermalScene.astro';
+import { range } from '../../lib/format';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, prev: projects[i - 1], next: projects[i + 1] },
+    props: { project, next: projects[(i + 1) % projects.length] },
   }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
-  prev?: CollectionEntry<'projects'>;
-  next?: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
 }
 
-const { project, prev, next } = Astro.props;
+const { project, next } = Astro.props;
 const { Content } = await render(project);
-const { title, outcome, employer, period, tags, figure, interactive, inlineFigures } = project.data;
+const { title, outcome, employer, period, tags, figure, interactive, inlineFigures, metric, description } = project.data;
 ---
 
-<Base title={title} description={outcome}>
+<Base title={title} description={description ?? outcome}>
   <article class="project wrap">
-    <div class="split head">
-      <aside class="margin side note" aria-label="Project details">
-        <a class="back" href="/#work">All projects</a>
-        <dl>
-          <dt class="visually-hidden">Employer</dt>
-          <dd>{employer}</dd>
-          <dt class="visually-hidden">Period</dt>
-          <dd>{period}</dd>
-          <dt class="visually-hidden">Methods and tools</dt>
-          <dd>
-            <ul role="list">
-              {tags.map((t) => <li>{t}</li>)}
-            </ul>
-          </dd>
-        </dl>
-      </aside>
-      <div class="content">
-        <h1>{title}</h1>
-        <p class="outcome">{outcome}</p>
-
-        {inlineFigures ? null : interactive === 'thermal' ? (
-          <ThermalScene caption={figure?.caption} />
-        ) : (
-          <figure class="figure">
+    <header class="head">
+      <a class="back link" href="/#work">All projects</a>
+      <div class="head__grid">
+        <div class="head__text">
+          <h1 class="title" data-split="lines" data-intro data-lcp>{title}</h1>
+          <p class="outcome" data-reveal="up" data-intro data-delay="0.2" data-lcp>{outcome}</p>
+        </div>
+        {figure?.diagram && (
+          <figure class="head__fig lock is-locked" data-reveal="clip" data-intro data-delay="0.3">
             <div class="figure-frame">
-              <Diagram name={figure?.diagram} />
+              <Diagram name={figure.diagram} />
             </div>
-            {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
+            {metric && <span class="lock__chip" aria-hidden="true">{metric}</span>}
+            {!interactive && !inlineFigures && figure.caption && <figcaption class="meta">{figure.caption}</figcaption>}
           </figure>
         )}
+      </div>
+    </header>
 
-        {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
+    {interactive === 'thermal' && (
+      <div class="media">
+        <ThermalScene caption={figure?.caption} />
+      </div>
+    )}
 
-        <div class="prose body">
-          <Content />
+    {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
+
+    <div class="body">
+      <dl class="facts" data-reveal="fade">
+        <div><dt class="meta">Where</dt><dd>{employer}</dd></div>
+        <div><dt class="meta">When</dt><dd>{range(period)}</dd></div>
+        {metric && <div><dt class="meta">Result</dt><dd>{metric}</dd></div>}
+        <div>
+          <dt class="meta">Methods and tools</dt>
+          <dd>
+            <ul role="list">{tags.map((t) => <li>{t}</li>)}</ul>
+          </dd>
         </div>
+      </dl>
+      <div class="prose">
+        <Content />
       </div>
     </div>
 
-    <nav class="pager split" aria-label="More projects">
-      <div class="content pager-inner">
-        {prev ? (
-          <a href={`/projects/${prev.id}`}>
-            <span class="note">Previous</span>
-            <span class="pager-title">{prev.data.title}</span>
-          </a>
-        ) : <span />}
-        {next ? (
-          <a class="pager-next" href={`/projects/${next.id}`}>
-            <span class="note">Next</span>
-            <span class="pager-title">{next.data.title}</span>
-          </a>
-        ) : (
-          <a class="pager-next" href="/#contact">
-            <span class="note">Next</span>
-            <span class="pager-title">Get in touch</span>
-          </a>
-        )}
-      </div>
+    <nav class="next" aria-label="Next project">
+      <p class="meta">Next project</p>
+      <a class="next__link" href={`/projects/${next.id}`}>
+        <span class="next__title lock">
+          {next.data.title}
+          <span class="lock__chip" aria-hidden="true">{next.data.metric ?? range(next.data.period)}</span>
+        </span>
+        <span class="next__meta meta">{next.data.employer}, {range(next.data.period)}</span>
+      </a>
     </nav>
   </article>
 </Base>
 
 <style>
   .project {
-    padding-top: var(--space-4);
-  }
-
-  .side {
-    padding-top: 0.6rem;
+    padding-top: clamp(0.5rem, 2vw, 1.5rem);
   }
 
   .back {
     display: inline-block;
-    margin-bottom: var(--space-3);
+    padding-block: 0.3rem;
+    font-size: var(--t-s);
     font-weight: 600;
   }
 
-  .side dl,
-  .side dd,
-  .side ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .head__grid {
+    display: grid;
+    gap: var(--space-5) var(--gutter);
+    margin-top: var(--space-4);
   }
 
-  .side dd + dd {
-    margin-top: 0.15rem;
-  }
-
-  .side ul {
-    margin-top: var(--space-2);
-  }
-
-  h1 {
-    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
-    line-height: 1.05;
-    max-width: 18ch;
+  .title {
+    margin-left: -0.04em;
+    font-size: clamp(2.1rem, 1rem + 3.6vw, 4.6rem);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
   }
 
   .outcome {
-    margin-top: var(--space-3);
-    font-size: var(--step-1);
-    line-height: 1.45;
+    margin-top: var(--space-4);
+    font-size: var(--t-m);
+    line-height: 1.4;
     max-width: 44ch;
   }
 
-  /* Pages whose figures live inside the text need the gap the figure gave */
-  .outcome + .body {
-    margin-top: var(--space-5);
+  .head__fig {
+    align-self: start;
   }
 
-  .figure {
-    margin: var(--space-4) 0 var(--space-5);
-    max-width: 48rem;
+  /* The hero figure stays locked: it is the target of this page */
+  .head__fig.lock::after {
+    outline-offset: 4px;
+  }
+
+  .head__fig .lock__chip {
+    left: -4px;
+    top: -4px;
+  }
+
+  @media (min-width: 900px) {
+    .head__fig.lock::after {
+      outline-offset: 8px;
+    }
+    .head__fig .lock__chip {
+      left: -8px;
+      top: -8px;
+    }
+  }
+
+  .head__fig figcaption {
+    margin-top: 1rem;
+    font-size: var(--t-s);
   }
 
   .figure-frame {
-    border: 1px solid var(--rule);
+    border: 1px solid var(--c-line);
     padding: var(--space-2);
+    background: rgb(233 236 230 / 0.02);
   }
 
-  .figure figcaption {
-    margin-top: 0.7rem;
-    max-width: 70ch;
-    font-size: 0.95rem;
-  }
-
-  .pager {
+  .media {
     margin-top: var(--space-6);
   }
 
-  .pager-inner {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-3);
+  /* minmax(0, 1fr): wide figures inside the text must never widen the page */
+  .head__grid,
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .body {
+    display: grid;
+    gap: var(--space-5) var(--gutter);
+    margin-top: var(--space-6);
+  }
+
+  .facts {
+    align-self: start;
+    border-top: 1px solid var(--c-line);
+    font-size: var(--t-s);
+    line-height: 1.4;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: var(--gutter);
+    padding-block: 0.55rem;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .facts ul {
+    list-style: none;
+  }
+
+  .next {
+    margin-top: var(--space-7);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--c-line);
   }
 
-  .pager a {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    max-width: 24rem;
-    text-decoration: none;
+  .next__link {
+    display: inline-grid;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
   }
 
-  .pager-next {
-    text-align: right;
-    margin-left: auto;
+  .next__title {
+    justify-self: start;
+    font-size: clamp(1.9rem, 0.9rem + 3.9vw, 5rem);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    max-width: 18ch;
+    text-wrap: balance;
+    transition: translate 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
 
-  .pager-title {
-    font-family: var(--font-head);
-    font-stretch: 105%;
-    font-weight: 700;
-    font-size: var(--step-1);
-    line-height: 1.2;
-    color: var(--ink);
+  .next__title .lock__chip {
+    letter-spacing: 0.01em;
   }
 
-  .pager a:hover .pager-title {
-    text-decoration: underline;
-  }
-
-  /* Narrow: details become one compact block above the title */
-  @media (max-width: 859px) {
-    .side {
-      padding-top: 0;
-      margin-bottom: var(--space-3);
+  @media (hover: hover) {
+    .next__link:hover .next__title {
+      translate: 0.5rem 0;
     }
-    .back {
-      margin-bottom: var(--space-2);
+  }
+
+  .next__link:focus-visible .next__title {
+    translate: 0.5rem 0;
+  }
+
+  @media (min-width: 900px) {
+    .head__grid,
+    .media,
+    .body {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
     }
-    .side ul {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 1rem;
-      margin-top: 0.3rem;
+    .head__text {
+      grid-column: 1 / span 7;
+    }
+    .head__fig {
+      grid-column: 8 / -1;
+      margin-top: 0.6rem;
+    }
+    .media > :global(*) {
+      grid-column: 1 / -1;
+    }
+    .facts {
+      grid-column: 1 / span 3;
+      position: sticky;
+      top: var(--space-4);
+    }
+    .prose {
+      grid-column: 4 / span 7;
+    }
+    .prose {
+      max-width: none;
+    }
+    .prose > :global(:not(figure)) {
+      max-width: var(--measure);
+    }
+    .next__link {
+      margin-left: calc((100% - 11 * var(--gutter)) / 12 * 3 + 3 * var(--gutter));
     }
   }
 </style>

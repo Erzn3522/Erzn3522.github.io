@@ -4,6 +4,8 @@ outcome: Took a non-operational multi-arm apple and orange harvester to field-re
 order: 2
 employer: Pek Automotive
 period: Apr 2025 – present
+metric: 5 countries
+description: How a non-operational multi-arm apple and orange harvester became field-ready, and the field deployments in five countries that followed.
 tags:
   - Object detection
   - Depth estimation
