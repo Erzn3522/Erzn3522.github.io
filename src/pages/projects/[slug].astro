@@ -155,6 +155,7 @@ const chapter = chapters.find((c) => c.href === `/projects/${project.id}`);
 
   .body {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 3rem var(--gutter);
     margin-top: 5rem;
   }

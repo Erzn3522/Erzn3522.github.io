@@ -9,8 +9,8 @@ const lTicks = [0, 2, 4, 6];
 ---
 
 <figure class="bp" data-backprop>
-  <div class="graph-wrap" tabindex="0" aria-label="Computation graph, scrolls sideways on small screens">
-  <svg class="graph" viewBox="0 0 720 230" role="img" aria-labelledby="bp-graph-title">
+  <div class="graph-wrap">
+  <svg class="graph graph-h" viewBox="0 0 720 230" role="img" aria-labelledby="bp-graph-title">
     <title id="bp-graph-title">Computation graph of one neuron: inputs x, w and b feed z = w·x + b, then ŷ = sigmoid of z, then the cross-entropy loss L against the label y. Forward values are shown in each box; gradients flowing backwards are shown in the accent colour under each edge.</title>
     <defs>
       <marker id="bp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -74,8 +74,68 @@ const lTicks = [0, 2, 4, 6];
       <text x="660" y="50" class="bp-val" data-v="y" data-d="0">{p.y}</text>
     </g>
   </svg>
+
+  <!-- The same graph, top to bottom, for phones: inputs at the top, the loss at the bottom,
+       gradients flowing back up on the right of each edge -->
+  <svg class="graph graph-v" viewBox="0 0 360 410" role="img" aria-labelledby="bp-graph-v-title">
+    <title id="bp-graph-v-title">Computation graph of one neuron, top to bottom: x, w and b feed z = w·x + b, then ŷ = sigmoid of z, then the loss L against the label y. Gradients flowing backwards are shown in the accent colour beside each edge.</title>
+    <defs>
+      <marker id="bp-arrow-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" class="bp-arrowhead" />
+      </marker>
+    </defs>
+    <g class="bp-edge">
+      <path d="M58 54L125 110" />
+      <path d="M180 54V110" />
+      <path d="M302 54L255 138" />
+      <path d="M180 166V226" />
+      <path d="M180 282V342" />
+      <path d="M272 370H255" />
+    </g>
+    <g class="bp-back">
+      <path d="M196 108V58" marker-end="url(#bp-arrow-v)" />
+      <path d="M196 224V170" marker-end="url(#bp-arrow-v)" />
+      <path d="M196 340V286" marker-end="url(#bp-arrow-v)" />
+    </g>
+    <g class="bp-grad">
+      <text x="206" y="80">∂z/∂w = x</text>
+      <text x="206" y="98">{fmt(X)}</text>
+      <text x="206" y="192">∂ŷ/∂z</text>
+      <text x="206" y="210" data-v="dp_dz" data-d="3">{fmt(p.dp_dz, 3)}</text>
+      <text x="206" y="308">∂L/∂ŷ</text>
+      <text x="206" y="326" data-v="dL_dp" data-d="2">{fmt(p.dL_dp)}</text>
+    </g>
+    <g class="bp-node">
+      <rect x="10" y="10" width="96" height="44" />
+      <text x="58" y="28">x</text>
+      <text x="58" y="46" class="bp-val">{fmt(X)}</text>
+
+      <rect x="132" y="10" width="96" height="44" class="bp-param" />
+      <text x="180" y="28">w</text>
+      <text x="180" y="46" class="bp-val" data-v="w" data-d="2">{fmt(p.w)}</text>
+
+      <rect x="254" y="10" width="96" height="44" />
+      <text x="302" y="28">b</text>
+      <text x="302" y="46" class="bp-val">{fmt(B)}</text>
+
+      <rect x="105" y="110" width="150" height="56" />
+      <text x="180" y="132">z = w·x + b</text>
+      <text x="180" y="154" class="bp-val" data-v="z" data-d="2">{fmt(p.z)}</text>
+
+      <rect x="105" y="226" width="150" height="56" />
+      <text x="180" y="248">ŷ = σ(z)</text>
+      <text x="180" y="270" class="bp-val" data-v="p" data-d="3">{fmt(p.p, 3)}</text>
+
+      <rect x="105" y="342" width="150" height="56" />
+      <text x="180" y="364">L = BCE(ŷ, y)</text>
+      <text x="180" y="386" class="bp-val" data-v="L" data-d="3">{fmt(p.L, 3)}</text>
+
+      <rect x="272" y="346" width="80" height="48" />
+      <text x="312" y="366">label y</text>
+      <text x="312" y="386" class="bp-val" data-v="y" data-d="0">{p.y}</text>
+    </g>
+  </svg>
   </div>
-  <p class="note graph-hint">Scroll sideways to see the whole graph.</p>
 
   <div class="bp-chain">
     <p>
@@ -122,7 +182,7 @@ const lTicks = [0, 2, 4, 6];
         <label><input type="radio" name="bp-y" value="0" data-y /> y = 0</label>
       </fieldset>
       <div class="bp-step">
-        <button type="button" class="button button-primary" data-step>Take a gradient step</button>
+        <button type="button" class="go go--solid" data-step>Take a gradient step</button>
         <p class="note" aria-live="polite" data-step-out>w ← w − η·∂L/∂w, with η = {ETA}.</p>
       </div>
     </div>
@@ -144,21 +204,18 @@ const lTicks = [0, 2, 4, 6];
     max-width: 48rem;
   }
 
-  .graph-wrap {
-    overflow-x: auto;
-  }
-
-  .graph-hint {
-    display: none;
+  /* Wide screens read the graph left to right; phones read the same graph top to bottom */
+  .graph-v {
+    display: none !important;
   }
 
   @media (max-width: 640px) {
-    .graph {
-      min-width: 620px;
+    .graph-h {
+      display: none !important;
     }
-    .graph-hint {
-      display: block;
-      margin-top: 0.3rem;
+    .graph-v {
+      display: block !important;
+      max-width: 420px;
     }
   }
 
