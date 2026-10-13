@@ -99,7 +99,7 @@ export interface Frame {
   cam: Camera;
 }
 
-export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; maxDpr: number }) {
+export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; maxDpr: number; minSize?: number }) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
   if (!gl) return null;
 
@@ -148,6 +148,7 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0, 0, 0, 1);
 
+  let count = Math.min(N, opts.count);
   let viewProj = new Float32Array(16);
   let eye: Vec3 = [0, 0, 5];
   let w = 1, h = 1, dpr = 1;
@@ -200,12 +201,12 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
     gl!.uniform1f(U.idle, f.idle);
     gl!.uniform1f(U.rgb, f.rgb);
     // points keep a minimum size on small screens, or the cloud turns to dust
-    gl!.uniform1f(U.size, Math.max(6.5, (Math.min(w, 1600) / 1440) * 9.5));
+    gl!.uniform1f(U.size, Math.max(opts.minSize ?? 6.5, (Math.min(w, 1600) / 1440) * 9.5));
     gl!.uniform1f(U.dpr, dpr);
     gl!.uniform1f(U.near, Math.max(0.1, cam.dist - 2.2));
     gl!.uniform1f(U.far, cam.dist + 2.4);
     gl!.clear(gl!.COLOR_BUFFER_BIT);
-    gl!.drawArrays(gl!.POINTS, 0, opts.count);
+    gl!.drawArrays(gl!.POINTS, 0, count);
   }
 
   /** World point → CSS pixels, plus its distance to the camera in metres */
@@ -222,5 +223,14 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
   }
 
   resize();
-  return { gl, resize, setPair, render, project };
+  return {
+    gl,
+    resize,
+    setPair,
+    render,
+    project,
+    count: () => count,
+    // points are shuffled, so any prefix is a uniform sample
+    setCount: (n: number) => (count = Math.max(Math.round(N * 0.3), Math.min(N, n))),
+  };
 }

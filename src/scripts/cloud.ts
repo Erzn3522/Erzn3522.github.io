@@ -18,9 +18,13 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
   if (!canvas || !labelsEl || !sections.length) return;
 
   const small = matchMedia('(max-width: 767px)').matches;
+  // Fewer points on modest hardware from the start; the loop trims further if frames run long
+  const hw = navigator as Navigator & { deviceMemory?: number };
+  const low = (hw.hardwareConcurrency ?? 8) <= 4 || (hw.deviceMemory ?? 8) <= 3;
+  const share = low ? 0.5 : small ? 0.85 : 1;
   let cloud: ReturnType<typeof createCloud> = null;
   try {
-    cloud = createCloud(canvas, { count: small ? Math.round(S.N * 0.75) : S.N, maxDpr: small ? 1.5 : 2 });
+    cloud = createCloud(canvas, { count: Math.round(S.N * share), maxDpr: small || low ? 1.5 : 2, minSize: small ? 8 : 6.5 });
   } catch {
     cloud = null;
   }
@@ -84,12 +88,47 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
     document.documentElement.classList.toggle('camera-view', on);
   };
   const holdable = (t: EventTarget | null) => !(t as HTMLElement)?.closest?.('a, button, input, label, [data-no-hold]');
-  addEventListener('pointerdown', (e) => {
-    if (e.button === 0 && holdable(e.target)) setView(true);
-  });
   const release = () => { if (!pinned) setView(false); };
-  addEventListener('pointerup', release);
-  addEventListener('pointercancel', release);
+
+  // Mouse and pen: the camera view shows while the button is down.
+  // Touch: only a deliberate long press (still finger, ~0.4 s) shows it, so scrolling never flickers.
+  let holdTimer = 0;
+  let touchHold = false;
+  const start = { x: 0, y: 0 };
+  const cancelHold = () => {
+    clearTimeout(holdTimer);
+    holdTimer = 0;
+  };
+  addEventListener('pointerdown', (e) => {
+    if (!holdable(e.target)) return;
+    if (e.pointerType === 'touch') {
+      start.x = e.clientX;
+      start.y = e.clientY;
+      cancelHold();
+      holdTimer = window.setTimeout(() => {
+        holdTimer = 0;
+        touchHold = true;
+        setView(true);
+      }, 420);
+      return;
+    }
+    if (e.button === 0) setView(true);
+  });
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch' && holdTimer && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) cancelHold();
+  }, { passive: true });
+  addEventListener('scroll', cancelHold, { passive: true });
+  const end = () => {
+    cancelHold();
+    touchHold = false;
+    release();
+  };
+  addEventListener('pointerup', end);
+  addEventListener('pointercancel', end);
+  // a long press must not open the browser's text or link menu
+  addEventListener('contextmenu', (e) => {
+    if (touchHold) e.preventDefault();
+  });
   addEventListener('keydown', (e) => {
     if (e.code === 'Space' && holdable(document.activeElement) && !e.repeat) { e.preventDefault(); setView(true); }
   });
@@ -162,6 +201,27 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
     for (let k = used; k < labelEls.length; k++) labelEls[k].hidden = true;
   }
 
+  // ---------- frame budget: if the device struggles, draw fewer points (twice at most) ----------
+  let samples: number[] = [];
+  let trims = 0;
+  let warmup = 1.2; // seconds: ignore shader compile and first uploads
+  function budget(dt: number) {
+    if (trims >= 2 || reduce.matches) return;
+    if (warmup > 0) {
+      warmup -= dt;
+      return;
+    }
+    samples.push(dt);
+    if (samples.length < 60) return;
+    const sorted = [...samples].sort((p, q) => p - q);
+    const median = sorted[sorted.length >> 1];
+    samples = [];
+    if (median > 1 / 42) {
+      trims++;
+      cloud!.setCount(Math.round(cloud!.count() * 0.6));
+    }
+  }
+
   // ---------- the loop ----------
   const cam: Camera = { ...chapters[0].cam, target: [...chapters[0].cam.target] };
   let current = -1;
@@ -199,8 +259,14 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
     cam.phi += (goal.phi + still * pointer.y * -0.22 - cam.phi) * k;
     rgb += (rgbTarget - rgb) * Math.min(1, dt * (reduce.matches ? 60 : 7));
 
+    // Portrait screens: bring the camera closer so the subject fills the narrow frame
     const portrait = innerWidth / innerHeight < 0.8;
-    cloud!.render({ morph: move, rgb, time: t, idle: still, cam: portrait ? { ...cam, dist: cam.dist * 0.8 } : cam });
+    const pm = lerp(chapters[i].portrait, chapters[Math.min(i + 1, chapters.length - 1)].portrait, move);
+    // and aim a little low, so the subject sits in the upper half, above the copy
+    const pd = cam.dist * pm;
+    const portraitCam = { ...cam, dist: pd, target: [cam.target[0], cam.target[1] - pd * 0.16, cam.target[2]] as [number, number, number] };
+    cloud!.render({ morph: move, rgb, time: t, idle: still, cam: portrait ? portraitCam : cam });
+    budget(dt);
     // labels only on a settled reconstruction
     drawLabels(chapters[i], Math.max(0, 1 - move * 4));
     requestAnimationFrame(frame);

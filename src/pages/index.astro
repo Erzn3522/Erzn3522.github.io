@@ -28,8 +28,8 @@ const work = chapters.filter((c) => c.title);
         fruit off a tree, outdoors, in sunlight. Now at Pek Automotive in {site.location}.
       </p>
       <p class="hello__hint note">
-        <span class="hint-fine">Move the pointer to look around.</span> Press and hold anywhere to see what the camera
-        sees. Scroll to rebuild the next scene.
+        Colour is distance: near is red, far is blue. <span class="hint-fine">Move the pointer to look around.</span>
+        Press and hold anywhere to see what the camera sees. Scroll to rebuild the next scene.
       </p>
     </div>
   </section>
@@ -181,6 +181,12 @@ const work = chapters.filter((c) => c.title);
   @media (hover: none) {
     .hint-fine {
       display: none;
+    }
+    /* a long press shows the camera view: it must not start a text selection */
+    :global(html.gl-on) .ch {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
   }
 
