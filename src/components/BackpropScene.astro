@@ -11,7 +11,7 @@ const lTicks = [0, 2, 4, 6];
 <figure class="bp" data-backprop>
   <div class="graph-wrap" tabindex="0" aria-label="Computation graph, scrolls sideways on small screens">
   <svg class="graph" viewBox="0 0 720 230" role="img" aria-labelledby="bp-graph-title">
-    <title id="bp-graph-title">Computation graph of one neuron: inputs x, w and b feed z = w·x + b, then ŷ = sigmoid of z, then the cross-entropy loss L against the label y. Forward values are shown in each box; gradients flowing backwards are shown in green under each edge.</title>
+    <title id="bp-graph-title">Computation graph of one neuron: inputs x, w and b feed z = w·x + b, then ŷ = sigmoid of z, then the cross-entropy loss L against the label y. Forward values are shown in each box; gradients flowing backwards are shown in the accent colour under each edge.</title>
     <defs>
       <marker id="bp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0 0L10 5L0 10z" class="bp-arrowhead" />
@@ -135,7 +135,7 @@ const lTicks = [0, 2, 4, 6];
 
 <script>
   import { initBackprop } from '../scripts/backprop';
-  document.querySelectorAll<HTMLElement>('[data-backprop]').forEach(initBackprop);
+  document.querySelectorAll<HTMLElement>('[data-backprop]').forEach((el) => initBackprop(el));
 </script>
 
 <style>

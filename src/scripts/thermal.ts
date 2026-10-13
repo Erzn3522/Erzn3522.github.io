@@ -1,6 +1,7 @@
 // Thermal NDT figure: thermal frame left of the divider, Fourier phase image
 // right of it. Event-driven like the hero; the easing loop stops on arrival.
 
+import { gsap } from 'gsap';
 import {
   NX,
   NY,
@@ -30,7 +31,7 @@ interface Chart {
   CB1: number;
 }
 
-export function initThermal(root: HTMLElement) {
+export function initThermal(root: HTMLElement, signal: AbortSignal) {
   const live = root.querySelector<HTMLElement>('[data-live]');
   const fallback = root.querySelector<HTMLElement>('[data-static]');
   const frame = root.querySelector<HTMLElement>('[data-frame]');
@@ -70,7 +71,7 @@ export function initThermal(root: HTMLElement) {
   let hovering = false;
   let focused = false;
   let probe: number | null = null; // pixel index under the pointer
-  let raf = 0;
+  let running = false;
   let detect = '#d7332a';
   let onDetect = '#ffffff';
   let px = 1;
@@ -207,21 +208,27 @@ export function initThermal(root: HTMLElement) {
   }
 
   // ---------- loop ----------
+  const stop = () => {
+    if (running) gsap.ticker.remove(tick);
+    running = false;
+  };
+
   function tick() {
-    raf = 0;
-    if (document.hidden) return;
+    if (document.hidden) return stop();
     const diff = target - pos;
     if (reduce.matches || Math.abs(diff) < 0.0008) {
       pos = target;
+      stop();
     } else {
-      pos += diff * 0.25;
-      raf = requestAnimationFrame(tick);
+      pos += diff * (1 - Math.pow(0.75, gsap.ticker.deltaRatio()));
     }
     draw();
   }
 
   const request = () => {
-    if (!raf && !document.hidden) raf = requestAnimationFrame(tick);
+    if (running || document.hidden) return;
+    running = true;
+    gsap.ticker.add(tick);
   };
 
   const setTarget = (v: number) => {
@@ -282,25 +289,23 @@ export function initThermal(root: HTMLElement) {
     draw();
   });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && raf) {
-      cancelAnimationFrame(raf);
-      raf = 0;
-    } else {
-      request();
-    }
-  });
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.hidden) stop();
+      else request();
+    },
+    { signal },
+  );
 
-  const recolor = () => {
-    readColors();
-    draw();
-  };
-  window.addEventListener('themechange', recolor);
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
-  reduce.addEventListener('change', () => {
-    if (reduce.matches) setTarget(0.5);
-    draw();
-  });
+  reduce.addEventListener(
+    'change',
+    () => {
+      if (reduce.matches) setTarget(0.5);
+      draw();
+    },
+    { signal },
+  );
 
   readColors();
   paintPhase();
@@ -309,7 +314,12 @@ export function initThermal(root: HTMLElement) {
   live.hidden = false;
   fallback.hidden = true;
   root.querySelectorAll<HTMLElement>('.live-only').forEach((el) => (el.hidden = false));
-  new ResizeObserver(resize).observe(frame);
+  const ro = new ResizeObserver(resize);
+  ro.observe(frame);
+  signal.addEventListener('abort', () => {
+    ro.disconnect();
+    stop();
+  });
   resize();
   drawCharts();
   document.fonts?.ready.then(() => draw());

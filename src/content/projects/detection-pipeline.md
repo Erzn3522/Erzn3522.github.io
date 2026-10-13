@@ -1,9 +1,11 @@
 ---
 title: Depth and detection for clustered fruit
-outcome: Replaced peak-based depth with a front-surface search, made exposure follow changing sunlight, and retrained YOLO segmentation on occluded clusters from 700 GB of field recordings.
+outcome: Replaced peak-based depth with a front-surface search, made exposure follow changing sunlight, and retrained YOLO segmentation on occluded clusters from 700 GB of field recordings.
 order: 3
 employer: Pek Automotive
 period: Apr 2025 – present
+metric: 700 GB of recordings
+description: Front-surface depth instead of peak depth, exposure that follows sunlight, and YOLO segmentation retrained on 700 GB of field recordings.
 tags:
   - Intel RealSense D435
   - YOLO instance segmentation
@@ -25,7 +27,7 @@ The robot measures fruit depth with an Intel RealSense D435. Taking the peak of 
 
 - **Depth.** A histogram front-surface search replaces the peak, and fruit pixel masking keeps foliage out of the estimate. I also corrected the perspective-projection bias in fruit diameter estimation.
 - **Exposure.** A saturation-based controller adapts faster than the default auto-exposure when sunlight changes.
-- **Detection.** A semi-automated annotation workflow over 700 GB of field recordings, then YOLO instance segmentation models retrained on occluded fruit clusters.
+- **Detection.** A semi-automated annotation workflow over 700 GB of field recordings, then YOLO instance segmentation models retrained on occluded fruit clusters.
 
 ## Result
 

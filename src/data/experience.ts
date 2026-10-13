@@ -44,7 +44,7 @@ export const experience: Role[] = [
     org: 'Doğru Holding (DGR Project)',
     place: 'Istanbul, Turkey',
     summary:
-      'Face recognition with stereo liveness on Jetson Nano. Also a real-time pipeline that anonymized people in security camera feeds and streamed to YouTube Live at a stable 30 fps, keeping per-frame processing under 30 ms.',
+      'Face recognition with stereo liveness on Jetson Nano. Also a real-time pipeline that anonymized people in security camera feeds and streamed to YouTube Live at a stable 30 fps, keeping per-frame processing under 30 ms.',
     projects: ['face-recognition'],
   },
   {

@@ -1,69 +1,41 @@
-@import '@fontsource-variable/archivo/wdth.css';
-@import '@fontsource-variable/source-serif-4/wght.css';
+@import '@fontsource-variable/bricolage-grotesque/standard.css';
 
-/* ---------- Tokens ---------- */
-
+/* "Point Cloud": the page is black because a sensor's empty space is black.
+   The only colour on screen comes from the data: depth (turbo) or the camera view. */
 :root {
-  --board: #e8ece9;
-  --ink: #17262f;
-  --leaf: #2d6a4f;
-  --detect: #d7332a;
-  --on-detect: #ffffff;
-  --mute: #5a6864;
-  --rule: #c3ccc8;
+  --bg: #000000;
+  --fg: #f1f0ea;
+  --muted: #a3a29b;
+  --line: rgb(241 240 234 / 0.16);
+  --hot: #ff6a3d; /* the near end of the depth colormap: focus, links, the one UI accent */
 
-  --font-head: 'Archivo Variable', 'Arial Narrow', system-ui, sans-serif;
-  --font-body: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
-
-  /* Modular scale, ratio 1.25 on 18px */
-  --step--1: 0.9rem;
-  --step-0: 1.125rem;
-  --step-1: 1.406rem;
-  --step-2: 1.758rem;
-  --step-3: 2.197rem;
-  --step-4: 2.747rem;
-  --step-5: 3.433rem;
-
+  /* Names the interactive figures read */
+  --board: #000000;
+  --ink: var(--fg);
+  --mute: var(--muted);
+  --rule: rgb(241 240 234 / 0.22);
+  --leaf: #ffb347;
+  --detect: #ff6a3d;
+  --on-detect: #000000;
+  --font-head: var(--f);
+  --font-body: var(--f);
+  --step--1: 0.875rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3rem;
+  --step-2: 1.7rem;
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2.5rem;
   --space-5: 4rem;
-  --space-6: 6.5rem;
+  --measure: 62ch;
 
-  --gutter: 24px;
-  --pad: clamp(16px, 4vw, 48px);
-  --max: 1360px;
-  --measure: 66ch;
+  --f: 'Bricolage Grotesque Variable', 'Arial', system-ui, sans-serif;
+  --pad: clamp(18px, 3.4vw, 56px);
+  --gutter: clamp(1rem, 2vw, 2rem);
 
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --board: #0f181d;
-    --ink: #e3eae6;
-    --leaf: #6fbf98;
-    --detect: #ff6b5e;
-    --on-detect: #0f181d;
-    --mute: #93a4a0;
-    --rule: #26363d;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --board: #0f181d;
-  --ink: #e3eae6;
-  --leaf: #6fbf98;
-  --detect: #ff6b5e;
-  --on-detect: #0f181d;
-  --mute: #93a4a0;
-  --rule: #26363d;
   color-scheme: dark;
 }
-
-/* ---------- Base ---------- */
 
 *,
 *::before,
@@ -71,127 +43,124 @@
   box-sizing: border-box;
 }
 
+* {
+  margin: 0;
+}
+
 html {
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  background: var(--bg);
+  color: var(--fg);
   -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 body {
-  margin: 0;
-  background: var(--board);
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: var(--step-0);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-@media (min-width: 1100px) {
-  body {
-    font-size: 1.1875rem;
-  }
+  min-height: 100dvh;
+  background: var(--bg);
+  font-family: var(--f);
+  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  font-optical-sizing: auto;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-head);
-  font-stretch: 112%;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-  margin: 0;
+  line-height: 1;
   text-wrap: balance;
 }
 
 p {
-  margin: 0;
   text-wrap: pretty;
 }
 
-a {
-  color: var(--leaf);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-
-a:hover {
-  text-decoration-thickness: 2px;
-}
-
-:focus-visible {
-  outline: 2px solid var(--leaf);
-  outline-offset: 3px;
+ul,
+ol {
+  padding: 0;
 }
 
 img,
-svg {
+svg,
+canvas {
+  display: block;
   max-width: 100%;
 }
 
-.visually-hidden {
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--hot);
+  color: #000;
+}
+
+:focus-visible {
+  outline: 2px solid var(--hot);
+  outline-offset: 3px;
+}
+
+#main:focus {
+  outline: none;
+}
+
+.skip {
+  position: fixed;
+  left: var(--pad);
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--fg);
+  color: var(--bg);
+  translate: 0 -200%;
+}
+
+.skip:focus-visible {
+  translate: none;
+}
+
+.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
-  margin: -1px;
-  padding: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-  border: 0;
 }
-
-.skip-link {
-  position: absolute;
-  left: var(--pad);
-  top: -100px;
-  z-index: 10;
-  padding: 0.6rem 1rem;
-  background: var(--ink);
-  color: var(--board);
-  font-family: var(--font-head);
-  font-weight: 600;
-}
-
-.skip-link:focus {
-  top: 0.75rem;
-}
-
-/* ---------- Grid ---------- */
 
 .wrap {
-  max-width: var(--max);
+  max-width: 1500px;
   margin-inline: auto;
   padding-inline: var(--pad);
 }
 
-/* Margin column (dates, notes) + content column. Stacks on narrow screens. */
-.split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1) var(--gutter);
+/* Links in running text: underlined at rest, the line heats up on hover */
+.prose a,
+a.inline {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 0.3s, text-decoration-thickness 0.3s;
 }
 
-@media (min-width: 860px) {
-  .split {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+@media (hover: hover) {
+  .prose a:hover,
+  a.inline:hover {
+    text-decoration-color: var(--hot);
+    text-decoration-thickness: 3px;
   }
-  .split > .margin {
-    grid-column: 1 / span 3;
-  }
-  .split > .content {
-    grid-column: 4 / -1;
-  }
-}
-
-/* Quiet Archivo used for dates, employers and other margin notes */
-.note {
-  font-family: var(--font-head);
-  font-size: var(--step--1);
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--mute);
-  font-variant-numeric: tabular-nums;
 }
 
 .prose {
@@ -203,15 +172,19 @@ svg {
 }
 
 .prose h2 {
-  font-size: var(--step-2);
   margin-top: 2.2em;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+  font-stretch: 75%;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .prose h2:first-child {
   margin-top: 0;
 }
 
-.prose ul {
+.prose ul,
+.prose ol {
   padding-left: 1.1em;
 }
 
@@ -219,49 +192,83 @@ svg {
   margin-top: 0.4em;
 }
 
-/* ---------- Buttons ---------- */
+.prose strong {
+  font-weight: 650;
+}
 
-.button {
+.note {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one control style: a hard-edged pill that fills with the near-depth colour */
+.go {
   display: inline-flex;
   align-items: center;
-  min-height: 48px;
+  min-height: 46px;
   padding: 0.55rem 1.15rem;
-  font-family: var(--font-head);
-  font-size: var(--step-0);
+  border: 1px solid var(--fg);
+  border-radius: 999px;
   font-weight: 600;
-  line-height: 1.2;
   text-decoration: none;
-  border: 2px solid var(--ink);
-  color: var(--ink);
-  background: transparent;
+  background: linear-gradient(var(--hot) 0 0) left / 0% 100% no-repeat;
+  transition: background-size 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.3s, border-color 0.3s;
 }
 
-.button:hover {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
+.go--solid {
+  background-color: var(--fg);
+  color: var(--bg);
 }
 
-.button-primary {
-  background: var(--ink);
-  color: var(--board);
+@media (hover: hover) {
+  .go:hover {
+    background-size: 100% 100%;
+    border-color: var(--hot);
+    color: #000;
+  }
+}
+
+.go:focus-visible {
+  background-size: 100% 100%;
+  color: #000;
+}
+
+.go:active {
+  scale: 0.97;
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-    transition: none !important;
-    animation: none !important;
   }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Schematic SVG used as the thermal figure's no-JS fallback */
+.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+.diagram path {
+  fill: none;
+}
+.diagram text {
+  font-family: var(--f);
+  font-size: 17px;
+  fill: var(--ink);
+}
+.diagram .d-ground {
+  fill: transparent;
+}
+.diagram .d-ink {
+  stroke: var(--ink);
+}
+.diagram .d-leaf-text {
+  fill: var(--leaf);
+  font-weight: 600;
 }

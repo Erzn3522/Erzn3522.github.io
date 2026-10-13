@@ -4,6 +4,7 @@ outcome: Heated PLA parts with halogen lamps, tracked how every pixel cooled, an
 order: 6
 employer: Gensys Automation & Machine Vision
 period: Dec 2021 – Dec 2022
+metric: TUBITAK funded
 tags:
   - Thermography
   - Fourier analysis

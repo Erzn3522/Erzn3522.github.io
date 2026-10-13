@@ -1,21 +1,30 @@
 ---
 import '../styles/global.css';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { site } from '../lib/site';
-import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
-import serifLatin from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2?url';
+import { site, mailto } from '../lib/site';
+import fontLatin from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-standard-normal.woff2?url';
 
 interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** The view toggle only makes sense where a point cloud is on screen */
+  cloud?: boolean;
 }
 
-const { title, description = site.description, noindex = false } = Astro.props;
+const { title, description = site.description, noindex = false, cloud = false } = Astro.props;
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name}, computer vision engineer`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL('/og.png', Astro.site);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.role,
+  url: Astro.site?.href,
+  email: `mailto:${site.email}`,
+  address: { '@type': 'PostalAddress', addressLocality: 'Logatec', addressCountry: 'SI' },
+  sameAs: site.links.map((l) => l.href),
+};
 ---
 
 <!doctype html>
@@ -24,49 +33,151 @@ const ogImage = new URL('/og.png', Astro.site);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
-    <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={serifLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossorigin />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#E8ECE9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F181D" media="(prefers-color-scheme: dark)" />
-
+    <meta name="theme-color" content="#000000" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={fullTitle} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
-
-    <script is:inline>
-      // Apply a saved theme before first paint. Storage can be unavailable.
-      try {
-        var t = localStorage.getItem('theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-      } catch (e) {}
-    </script>
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-    <Header />
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="top__name" href="/">{site.name}</a>
+      <nav aria-label="Main" class="top__nav">
+        {cloud && (
+          <button class="top__view" type="button" data-view-toggle aria-pressed="false">
+            <span class="top__swatch" aria-hidden="true"></span>Camera view
+          </button>
+        )}
+        <a class="top__link" href={site.cv} download="Abdullah-Erzin-CV.pdf">CV</a>
+        <a class="top__link" href={mailto}>Email</a>
+      </nav>
+    </header>
     <main id="main" tabindex="-1">
       <slot />
     </main>
-    <Footer />
   </body>
 </html>
 
 <style>
-  main:focus {
-    outline: none;
+  .top {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 40;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem var(--pad);
+    mix-blend-mode: difference;
+    color: #fff;
+    pointer-events: none;
+  }
+
+  .top > * {
+    pointer-events: auto;
+  }
+
+  .top__name {
+    font-weight: 700;
+    font-stretch: 75%;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .top__name,
+  .top__view {
+    transition: background-size 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;
+  }
+
+  .top__name {
+    background: linear-gradient(currentColor 0 0) left 100% / 0% 2px no-repeat;
+  }
+
+  @media (hover: hover) {
+    .top__name:hover {
+      background-size: 100% 2px;
+    }
+    .top__view:hover {
+      background-color: #fff;
+      color: #000;
+    }
+  }
+
+  .top__name:focus-visible {
+    background-size: 100% 2px;
+  }
+
+  .top__nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.8rem, 2vw, 1.8rem);
+  }
+
+  .top__link {
+    display: inline-block;
+    padding-block: 0.35rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: linear-gradient(currentColor 0 0) left 100% / 0% 2px no-repeat;
+    transition: background-size 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @media (hover: hover) {
+    .top__link:hover {
+      background-size: 100% 2px;
+    }
+  }
+
+  .top__link:focus-visible {
+    background-size: 100% 2px;
+  }
+
+  .top__view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .top__swatch {
+    width: 1.4rem;
+    height: 0.55rem;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #30123b, #4686fb, #1ae4b6, #a2fc3c, #fabb39, #e4460a, #7a0403);
+    transition: filter 0.3s;
+  }
+
+  .top__view[aria-pressed='true'] .top__swatch {
+    filter: grayscale(1);
+  }
+
+  @media (max-width: 480px) {
+    .top__nav {
+      gap: 0.9rem;
+    }
+    .top__view {
+      font-size: 0;
+      gap: 0;
+      padding: 0.6rem 0.55rem;
+    }
+    .top__link {
+      font-size: 0.95rem;
+    }
   }
 </style>

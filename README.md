@@ -1,6 +1,10 @@
 # erzn3522.github.io
 
-Portfolio of Abdullah Erzin, computer vision engineer. Astro, TypeScript, plain CSS. No analytics, no third-party scripts, fonts self-hosted.
+Portfolio of Abdullah Erzin, computer vision engineer. Astro, TypeScript, plain CSS, raw WebGL2 (no 3D library). No analytics, no third-party scripts, fonts self-hosted.
+
+Design concept "Point Cloud": the home page is one live point cloud that rebuilds itself, project by project, as you scroll. Every point is coloured by its real distance to the camera; hold anywhere (or press Space, or use "Camera view") to see the scene's own colours. All scenes are synthetic and generated in the browser. See [`DESIGN.md`](DESIGN.md).
+
+Two other complete redesigns are kept on backup branches: `redesign` ("Approach": a depth readout from 7.5 m to "In reach") and `redesign-replay` ("Replay": the career as a field recording with a timeline playhead).
 
 - Brief: [`INITIAL.md`](INITIAL.md)
 - Design plan and decisions: [`DESIGN.md`](DESIGN.md)
@@ -33,19 +37,20 @@ Writes `/` and one project page at 1440, 768 and 390 px to `./shots/`, in light,
 
 ### OG image and touch icon
 
-`npm run og` regenerates `public/og.png` and `public/apple-touch-icon.png` from the calibration-board motif.
+`public/og.png` is a 1200×630 capture of the live hero (made with the awwwards skill's `og.mjs` against the production build). `public/favicon.svg` is the identity mark; `public/apple-touch-icon.png` is a 180 px render of it. The older `npm run og` script still draws the previous calibration-board motif: do not run it unless you want that look back.
 
 ## Where things are
 
 | Path | What |
 |---|---|
-| `src/lib/scene.ts` | Seeded stereo orchard scene: geometry, disparity, colormap, canvas and SVG drawing |
-| `src/scripts/hero.ts` | Interactive canvas (divider, boxes, keyboard, reduced motion) |
-| `src/components/HeroScene.astro` | Hero figure: SVG fallback, canvas, caption, legend |
+| `src/lib/shapes.ts` | Seeded synthetic point clouds, one per chapter (orchard, calibration, detection, navigation, face, thermal, attention, name) |
+| `src/lib/cloud-gl.ts` | WebGL2 renderer: morph between two shapes, live depth colouring (turbo), camera, projection for labels |
+| `src/scripts/cloud.ts` | Home controller: scroll → chapter and morph, pointer camera, hold-for-camera-view, live distance labels |
+| `src/data/chapters.ts` | Chapter copy, numbers and camera framing |
+| `src/components/Stage.astro` | Canvas, label overlay and caption |
 | `src/lib/thermal.ts`, `src/scripts/thermal.ts`, `src/components/ThermalScene.astro` | Interactive flash-thermography figure on the thermal NDT page |
 | `src/lib/backprop.ts`, `src/lib/attention.ts`, `src/components/BackpropScene.astro`, `src/components/AttentionScene.astro` | Interactive figures on the self-study page |
 | `src/content/projects/*.md` | Project pages (frontmatter: title, outcome, order, employer, period, tags, figure) |
-| `src/components/figures/` | Schematic SVG figures, one per project |
 | `src/data/experience.ts` | Timeline, education, skills |
 | `src/lib/site.ts` | Name, email, links |
 

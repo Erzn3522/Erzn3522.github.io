@@ -11,6 +11,10 @@ const projects = defineCollection({
     employer: z.string(),
     period: z.string(),
     tags: z.array(z.string()),
+    // Short, real number from the CV shown on the lock-on chip (e.g. "5 mm max error")
+    metric: z.string().optional(),
+    // Meta description when the outcome is longer than 160 characters
+    description: z.string().optional(),
     // Replaces the static figure with an interactive one on the project page
     interactive: z.enum(['thermal']).optional(),
     // The body (MDX) places its own figures; skip the figure block under the title

@@ -1,211 +1,220 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import Diagram from '../../components/Diagram.astro';
+import Stage from '../../components/Stage.astro';
 import ThermalScene from '../../components/ThermalScene.astro';
+import { chapters } from '../../data/chapters';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, prev: projects[i - 1], next: projects[i + 1] },
+    props: { project, next: projects[(i + 1) % projects.length] },
   }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
-  prev?: CollectionEntry<'projects'>;
-  next?: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
 }
 
-const { project, prev, next } = Astro.props;
+const { project, next } = Astro.props;
 const { Content } = await render(project);
-const { title, outcome, employer, period, tags, figure, interactive, inlineFigures } = project.data;
+const { title, outcome, employer, period, tags, figure, interactive, metric, description } = project.data;
+const when = period.replace(/\s*[–—]\s*/g, ' to ');
+const nextWhen = next.data.period.replace(/\s*[–—]\s*/g, ' to ');
+// The reconstruction for this project, if the home page has one
+const chapter = chapters.find((c) => c.href === `/projects/${project.id}`);
 ---
 
-<Base title={title} description={outcome}>
-  <article class="project wrap">
-    <div class="split head">
-      <aside class="margin side note" aria-label="Project details">
-        <a class="back" href="/#work">All projects</a>
+<Base title={title} description={description ?? outcome} cloud={!!chapter}>
+  <article>
+    <header class:list={['head', { 'head--cloud': !!chapter }]}>
+      {chapter && (
+        <div class="head__stage" data-chapter>
+          <Stage chapters={[chapter]} />
+        </div>
+      )}
+      <div class="head__text wrap">
+        <a class="back inline" href={chapter ? `/#${chapter.id}` : '/#record'}>Back to the scenes</a>
+        <p class="note head__when">{employer}, {when}</p>
+        <h1 class="title">{title}</h1>
+        <p class="outcome">{outcome}</p>
+        {metric && <p class="metric">{metric}</p>}
+      </div>
+    </header>
+
+    {interactive === 'thermal' && (
+      <div class="wrap media">
+        <ThermalScene caption={figure?.caption} />
+      </div>
+    )}
+
+    <div class="body wrap">
+      <aside class="facts" aria-label="Project details">
         <dl>
-          <dt class="visually-hidden">Employer</dt>
-          <dd>{employer}</dd>
-          <dt class="visually-hidden">Period</dt>
-          <dd>{period}</dd>
-          <dt class="visually-hidden">Methods and tools</dt>
-          <dd>
-            <ul role="list">
-              {tags.map((t) => <li>{t}</li>)}
-            </ul>
-          </dd>
+          <div><dt class="note">Where</dt><dd>{employer}</dd></div>
+          <div><dt class="note">When</dt><dd>{when}</dd></div>
+          <div><dt class="note">Methods and tools</dt><dd>{tags.join(', ')}</dd></div>
+          {chapter && figure?.caption && !interactive && <div><dt class="note">The scene above</dt><dd class="note">Synthetic, generated in code. {figure.caption}</dd></div>}
         </dl>
       </aside>
-      <div class="content">
-        <h1>{title}</h1>
-        <p class="outcome">{outcome}</p>
-
-        {inlineFigures ? null : interactive === 'thermal' ? (
-          <ThermalScene caption={figure?.caption} />
-        ) : (
-          <figure class="figure">
-            <div class="figure-frame">
-              <Diagram name={figure?.diagram} />
-            </div>
-            {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
-          </figure>
-        )}
-
-        {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
-
-        <div class="prose body">
-          <Content />
-        </div>
+      <div class="prose">
+        <Content />
       </div>
     </div>
 
-    <nav class="pager split" aria-label="More projects">
-      <div class="content pager-inner">
-        {prev ? (
-          <a href={`/projects/${prev.id}`}>
-            <span class="note">Previous</span>
-            <span class="pager-title">{prev.data.title}</span>
-          </a>
-        ) : <span />}
-        {next ? (
-          <a class="pager-next" href={`/projects/${next.id}`}>
-            <span class="note">Next</span>
-            <span class="pager-title">{next.data.title}</span>
-          </a>
-        ) : (
-          <a class="pager-next" href="/#contact">
-            <span class="note">Next</span>
-            <span class="pager-title">Get in touch</span>
-          </a>
-        )}
-      </div>
+    <nav class="next wrap" aria-label="Next project">
+      <p class="note">Next project</p>
+      <a class="next__link" href={`/projects/${next.id}`}>
+        <span class="next__title">{next.data.title}</span>
+        <span class="note">{next.data.employer}, {nextWhen}</span>
+      </a>
     </nav>
   </article>
 </Base>
 
 <style>
-  .project {
-    padding-top: var(--space-4);
+  .head {
+    position: relative;
+    padding-top: 6.5rem;
   }
 
-  .side {
-    padding-top: 0.6rem;
+  .head--cloud {
+    min-height: 92svh;
+    display: grid;
+    align-content: end;
+    padding-bottom: 6vh;
+  }
+
+  .head__stage {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* fade the scene into the page below */
+  .head__stage::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 40%;
+    background: linear-gradient(rgb(0 0 0 / 0), #000);
+    pointer-events: none;
+  }
+
+  .head__text {
+    position: relative;
+    z-index: 1;
+    width: 100%;
   }
 
   .back {
     display: inline-block;
-    margin-bottom: var(--space-3);
-    font-weight: 600;
+    padding-block: 0.3rem;
+    font-size: 0.9rem;
   }
 
-  .side dl,
-  .side dd,
-  .side ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .head__when {
+    margin-top: 1.4rem;
+    color: var(--fg);
+    opacity: 0.75;
   }
 
-  .side dd + dd {
-    margin-top: 0.15rem;
-  }
-
-  .side ul {
-    margin-top: var(--space-2);
-  }
-
-  h1 {
-    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
-    line-height: 1.05;
-    max-width: 18ch;
+  .title {
+    max-width: 16ch;
+    margin-top: 0.6rem;
+    margin-left: -0.03em;
+    font-size: clamp(2.4rem, 1rem + 5vw, 6.4rem);
+    font-stretch: 75%;
+    font-weight: 750;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
   }
 
   .outcome {
-    margin-top: var(--space-3);
-    font-size: var(--step-1);
-    line-height: 1.45;
-    max-width: 44ch;
+    max-width: 48ch;
+    margin-top: 1.4rem;
+    font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem);
+    line-height: 1.4;
   }
 
-  /* Pages whose figures live inside the text need the gap the figure gave */
-  .outcome + .body {
-    margin-top: var(--space-5);
+  .metric {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--hot);
+    border-radius: 999px;
+    color: var(--hot);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
   }
 
-  .figure {
-    margin: var(--space-4) 0 var(--space-5);
-    max-width: 48rem;
+  .media {
+    margin-top: 4rem;
   }
 
-  .figure-frame {
-    border: 1px solid var(--rule);
-    padding: var(--space-2);
+  .body {
+    display: grid;
+    gap: 3rem var(--gutter);
+    margin-top: 5rem;
   }
 
-  .figure figcaption {
-    margin-top: 0.7rem;
-    max-width: 70ch;
-    font-size: 0.95rem;
+  .facts dl {
+    border-top: 1px solid var(--line);
   }
 
-  .pager {
-    margin-top: var(--space-6);
+  .facts div {
+    padding-block: 0.7rem;
+    border-bottom: 1px solid var(--line);
   }
 
-  .pager-inner {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--rule);
+  .facts dd {
+    margin: 0.15rem 0 0;
   }
 
-  .pager a {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    max-width: 24rem;
+  @media (min-width: 900px) {
+    .body {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+    }
+    .facts {
+      position: sticky;
+      top: 5rem;
+      align-self: start;
+    }
+  }
+
+  .next {
+    margin-top: 8rem;
+    padding-block: 2rem 6rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .next__link {
+    display: inline-grid;
+    gap: 0.8rem;
+    margin-top: 1rem;
     text-decoration: none;
   }
 
-  .pager-next {
-    text-align: right;
-    margin-left: auto;
+  .next__title {
+    max-width: 18ch;
+    font-size: clamp(2rem, 1rem + 4vw, 5.2rem);
+    font-stretch: 75%;
+    font-weight: 750;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    transition: translate 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.3s;
   }
 
-  .pager-title {
-    font-family: var(--font-head);
-    font-stretch: 105%;
-    font-weight: 700;
-    font-size: var(--step-1);
-    line-height: 1.2;
-    color: var(--ink);
+  @media (hover: hover) {
+    .next__link:hover .next__title {
+      translate: 0.6rem 0;
+      color: var(--hot);
+    }
   }
 
-  .pager a:hover .pager-title {
-    text-decoration: underline;
-  }
-
-  /* Narrow: details become one compact block above the title */
-  @media (max-width: 859px) {
-    .side {
-      padding-top: 0;
-      margin-bottom: var(--space-3);
-    }
-    .back {
-      margin-bottom: var(--space-2);
-    }
-    .side ul {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 1rem;
-      margin-top: 0.3rem;
-    }
+  .next__link:focus-visible .next__title {
+    translate: 0.6rem 0;
+    color: var(--hot);
   }
 </style>

@@ -1,0 +1,109 @@
+---
+// The point-cloud stage: a canvas, an overlay for live labels, and an honest caption.
+// `fixed` keeps it behind the whole page (home); otherwise it fills its parent (project pages).
+import type { Chapter } from '../data/chapters';
+import { site } from '../lib/site';
+
+interface Props {
+  chapters: Chapter[];
+  fixed?: boolean;
+}
+const { chapters, fixed = false } = Astro.props;
+---
+
+<div class:list={['stage', { 'stage--fixed': fixed }]} data-cloud data-chapters={JSON.stringify(chapters)} data-name={site.name} aria-hidden="true">
+  <canvas data-cloud-canvas></canvas>
+  <div class="stage__labels" data-cloud-labels></div>
+  <p class="stage__caption">Synthetic point clouds, generated in your browser. Near is red, far is blue.</p>
+</div>
+
+<script>
+  import { initCloud } from '../scripts/cloud';
+  const root = document.querySelector<HTMLElement>('[data-cloud]');
+  if (root) initCloud(root, JSON.parse(root.dataset.chapters ?? '[]'), root.dataset.name ?? '');
+</script>
+
+<style>
+  .stage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .stage--fixed {
+    position: fixed;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+
+  .stage.is-live canvas {
+    opacity: 1;
+  }
+
+  .stage__labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* A live detection: a box on the object and its measured distance */
+  .stage__labels :global(.cl-label) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--size);
+    height: var(--size);
+  }
+
+  .stage__labels :global(.cl-label[hidden]) {
+    display: none;
+  }
+
+  .stage__labels :global(.cl-box) {
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid rgb(255 255 255 / 0.9);
+  }
+
+  .stage__labels :global(.is-boxless .cl-box) {
+    display: none;
+  }
+
+  .stage__labels :global(.cl-text) {
+    position: absolute;
+    left: -1px;
+    bottom: 100%;
+    padding: 0.05rem 0.35rem;
+    background: #fff;
+    color: #000;
+    font-size: 0.72rem;
+    font-weight: 650;
+    font-stretch: 85%;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .stage__caption {
+    position: absolute;
+    right: var(--pad);
+    bottom: 0.9rem;
+    max-width: 22rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: right;
+    color: var(--muted);
+  }
+
+  @media (max-width: 767px) {
+    .stage__caption {
+      display: none;
+    }
+  }
+</style>
