@@ -1,6 +1,7 @@
 // Backprop figure: every value redraws on input. The only motion is the
 // gradient step the visitor asks for, and reduced motion makes it a jump.
 
+import { gsap } from 'gsap';
 import { pass, step, fmt, cx, cy, curvePath, tangentPath, type Pass } from '../lib/backprop';
 
 export function initBackprop(root: HTMLElement) {
@@ -18,7 +19,7 @@ export function initBackprop(root: HTMLElement) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let w = Number(slider.value);
   let y: 0 | 1 = 1;
-  let raf = 0;
+  let tween: gsap.core.Tween | null = null;
 
   function render() {
     const p: Pass = pass(w, y);
@@ -35,7 +36,7 @@ export function initBackprop(root: HTMLElement) {
   }
 
   slider.addEventListener('input', () => {
-    cancelAnimationFrame(raf);
+    tween?.kill();
     w = Number(slider.value);
     render();
   });
@@ -49,7 +50,7 @@ export function initBackprop(root: HTMLElement) {
   );
 
   button.addEventListener('click', () => {
-    cancelAnimationFrame(raf);
+    tween?.kill();
     const from = w;
     const to = step(w, y);
     const before = pass(from, y).L;
@@ -60,15 +61,16 @@ export function initBackprop(root: HTMLElement) {
       render();
       return;
     }
-    const t0 = performance.now();
-    const dur = 320;
-    const tick = (now: number) => {
-      const k = Math.min(1, (now - t0) / dur);
-      w = from + (to - from) * (1 - (1 - k) ** 3);
-      render();
-      if (k < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+    const o = { w: from };
+    tween = gsap.to(o, {
+      w: to,
+      duration: 0.32,
+      ease: 'power3.out',
+      onUpdate: () => {
+        w = o.w;
+        render();
+      },
+    });
   });
 
   controls.hidden = false;

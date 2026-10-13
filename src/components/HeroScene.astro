@@ -49,7 +49,13 @@ const ticks = [1, 1.5, 2, 3, Z_FAR].map((z) => ({
 
 <script>
   import { initHero } from '../scripts/hero';
-  document.querySelectorAll<HTMLElement>('[data-scene]').forEach(initHero);
+  import { onPage } from '../engine';
+  // The ClientRouter swaps pages without re-running scripts: init per page, clean up on leave.
+  onPage(() => {
+    const ac = new AbortController();
+    document.querySelectorAll<HTMLElement>('[data-scene]').forEach((el) => initHero(el, ac.signal));
+    return () => ac.abort();
+  });
 </script>
 
 <style>
@@ -92,12 +98,12 @@ const ticks = [1, 1.5, 2, 3, Z_FAR].map((z) => ({
     position: absolute;
     top: 10px;
     padding: 0.15rem 0.5rem;
-    font-family: var(--font-head);
-    font-size: 0.8rem;
+    font-size: var(--t-xs);
+    font-stretch: 75%;
     font-weight: 600;
     line-height: 1.4;
-    color: #17262f;
-    background: rgb(232 236 233 / 0.92);
+    color: var(--c-fg);
+    background: rgb(11 13 15 / 0.82);
     pointer-events: none;
   }
 
@@ -115,7 +121,8 @@ const ticks = [1, 1.5, 2, 3, Z_FAR].map((z) => ({
   }
 
   figcaption > p:first-child {
-    font-size: var(--step-0);
+    font-size: var(--t-s);
+    font-weight: 550;
   }
 
   figcaption .note {

@@ -3,209 +3,338 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Diagram from '../../components/Diagram.astro';
 import ThermalScene from '../../components/ThermalScene.astro';
+import { range } from '../../lib/format';
+import { pageAt, LIVE } from '../../data/replay';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, prev: projects[i - 1], next: projects[i + 1] },
+    props: { project, next: projects[(i + 1) % projects.length] },
   }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
-  prev?: CollectionEntry<'projects'>;
-  next?: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
 }
 
-const { project, prev, next } = Astro.props;
+const { project, next } = Astro.props;
 const { Content } = await render(project);
-const { title, outcome, employer, period, tags, figure, interactive, inlineFigures } = project.data;
+const { title, outcome, employer, period, tags, figure, interactive, inlineFigures, metric, description } = project.data;
+const pos = pageAt[project.id] ?? { at: LIVE, track: '' };
+const withPanel = !inlineFigures && !!figure?.diagram;
 ---
 
-<Base title={title} description={outcome}>
-  <article class="project wrap">
-    <div class="split head">
-      <aside class="margin side note" aria-label="Project details">
-        <a class="back" href="/#work">All projects</a>
-        <dl>
-          <dt class="visually-hidden">Employer</dt>
-          <dd>{employer}</dd>
-          <dt class="visually-hidden">Period</dt>
-          <dd>{period}</dd>
-          <dt class="visually-hidden">Methods and tools</dt>
-          <dd>
-            <ul role="list">
-              {tags.map((t) => <li>{t}</li>)}
-            </ul>
-          </dd>
-        </dl>
-      </aside>
-      <div class="content">
-        <h1>{title}</h1>
-        <p class="outcome">{outcome}</p>
+<Base title={title} description={description ?? outcome} at={pos.at} label={range(period)} track={pos.track}>
+  <article class="topic wrap">
+    <header class="head">
+      <a class="back link" href="/#replay">Back to the replay</a>
+      <p class="head__track mono">{employer}, {range(period)}</p>
+      <h1 class="title" data-split="lines" data-intro data-lcp>{title}</h1>
+      <p class="outcome" data-reveal="up" data-intro data-delay="0.15" data-lcp>{outcome}</p>
+      {metric && (
+        <p class="head__metric" data-reveal="fade" data-intro data-delay="0.3">
+          <span class="mono">RESULT</span>
+          <strong>{metric}</strong>
+        </p>
+      )}
+    </header>
 
-        {inlineFigures ? null : interactive === 'thermal' ? (
-          <ThermalScene caption={figure?.caption} />
-        ) : (
-          <figure class="figure">
-            <div class="figure-frame">
-              <Diagram name={figure?.diagram} />
-            </div>
-            {figure?.caption && <figcaption class="note">{figure.caption}</figcaption>}
-          </figure>
-        )}
-
-        {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
-
-        <div class="prose body">
-          <Content />
-        </div>
+    {interactive === 'thermal' && (
+      <div class="media">
+        <ThermalScene caption={figure?.caption} />
       </div>
+    )}
+
+    {/* Phase 2 slot: an interactive in-browser demo (ONNX Runtime Web) would render here. Not built yet. */}
+
+    <div class:list={['body', { 'body--panel': withPanel }]}>
+      <div class="prose" data-chapter-source>
+        <Content />
+      </div>
+
+      {withPanel ? (
+        <aside class="side" aria-label="Figure and project details">
+          <div class="panel side__panel" data-chapters data-chapter="0">
+            <p class="panel__bar"><span>FIGURE</span><span>{employer}</span></p>
+            <div class="side__fig"><Diagram name={figure!.diagram} /></div>
+            <div class="side__chapter" data-show="0">
+              <p class="side__label mono">CAPTION</p>
+              <p class="side__caption">{interactive ? 'Static schematic of the interactive figure above.' : figure!.caption}</p>
+            </div>
+            <div class="side__chapter" data-show="1">
+              <p class="side__label mono">METHODS AND TOOLS</p>
+              <ul role="list" class="side__log">{tags.map((t) => <li class="mono">{t}</li>)}</ul>
+            </div>
+            <div class="side__chapter" data-show="2">
+              <p class="side__label mono">RESULT</p>
+              <p class="side__metric">{metric ?? 'Shipped'}</p>
+            </div>
+          </div>
+        </aside>
+      ) : (
+        <dl class="facts">
+          <div><dt class="meta">Where</dt><dd>{employer}</dd></div>
+          <div><dt class="meta">When</dt><dd>{range(period)}</dd></div>
+          <div>
+            <dt class="meta">Methods and tools</dt>
+            <dd>{tags.join(', ')}</dd>
+          </div>
+        </dl>
+      )}
     </div>
 
-    <nav class="pager split" aria-label="More projects">
-      <div class="content pager-inner">
-        {prev ? (
-          <a href={`/projects/${prev.id}`}>
-            <span class="note">Previous</span>
-            <span class="pager-title">{prev.data.title}</span>
-          </a>
-        ) : <span />}
-        {next ? (
-          <a class="pager-next" href={`/projects/${next.id}`}>
-            <span class="note">Next</span>
-            <span class="pager-title">{next.data.title}</span>
-          </a>
-        ) : (
-          <a class="pager-next" href="/#contact">
-            <span class="note">Next</span>
-            <span class="pager-title">Get in touch</span>
-          </a>
-        )}
-      </div>
+    <nav class="next" aria-label="Next topic">
+      <p class="mono next__label">Next topic</p>
+      <a class="next__link" href={`/projects/${next.id}`}>
+        <span class="next__title" data-title>{next.data.title}</span>
+        <span class="next__meta mono">{next.data.employer}, {range(next.data.period)}</span>
+      </a>
     </nav>
   </article>
 </Base>
 
-<style>
-  .project {
-    padding-top: var(--space-4);
-  }
+<script>
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { onPage } from '../../engine';
+  // The side panel follows the chapter being read: caption, then methods, then the result
+  onPage(() => {
+    const panel = document.querySelector<HTMLElement>('[data-chapters]');
+    const prose = document.querySelector('[data-chapter-source]');
+    if (!panel || !prose) return;
+    [...prose.querySelectorAll('h2')].forEach((h, i) => {
+      const n = String(Math.min(i, 2));
+      ScrollTrigger.create({
+        trigger: h,
+        start: 'top 60%',
+        onEnter: () => (panel.dataset.chapter = n),
+        onLeaveBack: () => (panel.dataset.chapter = String(Math.max(0, Math.min(i, 2) - 1))),
+      });
+    });
+  });
+</script>
 
-  .side {
-    padding-top: 0.6rem;
+<style>
+  .topic {
+    padding-top: clamp(0.5rem, 2vw, 1.5rem);
   }
 
   .back {
     display: inline-block;
-    margin-bottom: var(--space-3);
+    padding-block: 0.3rem;
+    font-size: var(--t-s);
     font-weight: 600;
   }
 
-  .side dl,
-  .side dd,
-  .side ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .head__track {
+    margin-top: var(--space-4);
+    font-size: 0.8rem;
+    color: #b23c0c;
   }
 
-  .side dd + dd {
-    margin-top: 0.15rem;
-  }
-
-  .side ul {
+  .title {
     margin-top: var(--space-2);
-  }
-
-  h1 {
-    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
-    line-height: 1.05;
-    max-width: 18ch;
+    margin-left: -0.04em;
+    max-width: 20ch;
+    font-size: clamp(2.1rem, 1rem + 3.6vw, 4.6rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 0.97;
+    letter-spacing: -0.035em;
   }
 
   .outcome {
     margin-top: var(--space-3);
-    font-size: var(--step-1);
-    line-height: 1.45;
-    max-width: 44ch;
+    max-width: 52ch;
+    font-size: var(--t-m);
+    line-height: 1.4;
   }
 
-  /* Pages whose figures live inside the text need the gap the figure gave */
-  .outcome + .body {
+  .head__metric {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-top: var(--space-3);
+    padding: 0.45rem 0.8rem;
+    background: var(--c-panel);
+    color: var(--c-panel-fg);
+  }
+
+  .head__metric .mono {
+    font-size: 0.72rem;
+    color: var(--c-panel-muted);
+  }
+
+  .head__metric strong {
+    color: var(--c-panel-accent);
+    font-weight: 700;
+  }
+
+  .media {
     margin-top: var(--space-5);
   }
 
-  .figure {
-    margin: var(--space-4) 0 var(--space-5);
-    max-width: 48rem;
-  }
-
-  .figure-frame {
-    border: 1px solid var(--rule);
-    padding: var(--space-2);
-  }
-
-  .figure figcaption {
-    margin-top: 0.7rem;
-    max-width: 70ch;
-    font-size: 0.95rem;
-  }
-
-  .pager {
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5) var(--gutter);
     margin-top: var(--space-6);
   }
 
-  .pager-inner {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-3);
+  .side__panel {
+    position: sticky;
+    top: var(--space-3);
+  }
+
+  .side__fig {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--c-panel-line);
+  }
+
+  .side__chapter {
+    display: none;
+    padding: 0.75rem;
+    min-height: 7.5rem;
+  }
+
+  [data-chapter='0'] [data-show='0'],
+  [data-chapter='1'] [data-show='1'],
+  [data-chapter='2'] [data-show='2'] {
+    display: block;
+  }
+
+  .side__label {
+    font-size: 0.7rem;
+    color: var(--c-panel-muted);
+  }
+
+  .side__caption {
+    margin-top: 0.4rem;
+    font-size: var(--t-s);
+    line-height: 1.45;
+  }
+
+  .side__log {
+    list-style: none;
+    margin-top: 0.4rem;
+  }
+
+  .side__log li {
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  .side__log li::before {
+    content: '> ';
+    color: var(--c-panel-accent);
+  }
+
+  .side__metric {
+    margin-top: 0.3rem;
+    font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.8rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--c-panel-accent);
+  }
+
+  .facts {
+    border-top: 1px solid var(--c-line);
+    font-size: var(--t-s);
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--gutter);
+    padding-block: 0.55rem;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .next {
+    margin-top: var(--space-7);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--c-line);
   }
 
-  .pager a {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    max-width: 24rem;
-    text-decoration: none;
+  .next__label {
+    font-size: 0.8rem;
+    color: var(--c-muted);
   }
 
-  .pager-next {
-    text-align: right;
-    margin-left: auto;
+  .next__link {
+    display: inline-grid;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
   }
 
-  .pager-title {
-    font-family: var(--font-head);
-    font-stretch: 105%;
-    font-weight: 700;
-    font-size: var(--step-1);
-    line-height: 1.2;
-    color: var(--ink);
+  /* Played range: the title fills from the left on hover */
+  .next__title {
+    justify-self: start;
+    max-width: 20ch;
+    font-size: clamp(1.9rem, 0.9rem + 3.6vw, 4.4rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    background: linear-gradient(var(--c-accent) 0 0) left 92% / 0% 0.14em no-repeat;
+    transition: background-size 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
 
-  .pager a:hover .pager-title {
-    text-decoration: underline;
+  .next__meta {
+    font-size: 0.8rem;
+    color: var(--c-muted);
   }
 
-  /* Narrow: details become one compact block above the title */
-  @media (max-width: 859px) {
+  @media (hover: hover) {
+    .next__link:hover .next__title {
+      background-size: 100% 0.14em;
+    }
+  }
+
+  .next__link:focus-visible .next__title {
+    background-size: 100% 0.14em;
+  }
+
+  @media (min-width: 900px) {
+    .body--panel {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .body--panel .prose {
+      grid-column: 1 / span 7;
+    }
     .side {
-      padding-top: 0;
-      margin-bottom: var(--space-3);
+      grid-column: 8 / -1;
     }
-    .back {
-      margin-bottom: var(--space-2);
+    .body:not(.body--panel) .prose {
+      max-width: 52rem;
     }
-    .side ul {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 1rem;
-      margin-top: 0.3rem;
+    .body:not(.body--panel) .prose > :global(:not(figure)) {
+      max-width: var(--measure);
+    }
+    .body:not(.body--panel) {
+      max-width: 52rem;
+    }
+  }
+
+  /* Phones: the panel sits under the text as a plain block */
+  @media (max-width: 899px) {
+    .side__panel {
+      position: static;
+    }
+    .side__chapter {
+      display: block;
+      min-height: 0;
+    }
+    .side {
+      order: -1;
     }
   }
 </style>

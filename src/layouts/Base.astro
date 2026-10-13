@@ -1,39 +1,53 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Timeline from '../components/Timeline.astro';
+import { LIVE } from '../data/replay';
 import { site } from '../lib/site';
 import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
-import serifLatin from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2?url';
 
 interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** Playhead position for this page (months since Jan 2020), its readout and the lit track */
+  at?: number;
+  label?: string;
+  track?: string;
 }
 
-const { title, description = site.description, noindex = false } = Astro.props;
+const { title, description = site.description, noindex = false, at = LIVE, label = 'LIVE', track = '' } = Astro.props;
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name}, computer vision engineer`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL('/og.png', Astro.site);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.role,
+  url: Astro.site?.href,
+  email: `mailto:${site.email}`,
+  address: { '@type': 'PostalAddress', addressLocality: 'Logatec', addressCountry: 'SI' },
+  sameAs: site.links.map((l) => l.href),
+};
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={serifLatin} as="font" type="font/woff2" crossorigin />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#E8ECE9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F181D" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#e6e8e4" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
@@ -46,27 +60,94 @@ const ogImage = new URL('/og.png', Astro.site);
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <script is:inline>
-      // Apply a saved theme before first paint. Storage can be unavailable.
-      try {
-        var t = localStorage.getItem('theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-      } catch (e) {}
+      // Before first paint: flag JS + motion so hidden-until-revealed states never flash.
+      // No loader: the recording is already live.
+      var h = document.documentElement;
+      h.classList.add('js', 'no-loader');
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) h.classList.add('motion');
     </script>
+    <ClientRouter fallback="swap" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <div id="curtain" transition:persist="curtain" aria-hidden="true">
+      <div class="curtain__panel">
+        <p class="curtain__label">
+          <span class="curtain__z">Seeking</span>
+          <span class="curtain__title" data-curtain-title></span>
+        </p>
+      </div>
+    </div>
     <Header />
-    <main id="main" tabindex="-1">
+    <main id="main" tabindex="-1" data-at={at} data-label={label} data-track={track}>
       <slot />
     </main>
     <Footer />
+    <Timeline />
+    <script>
+      import { start } from '../engine/astro';
+      import { setupMotion } from '../motion/setup';
+      start(setupMotion);
+    </script>
   </body>
 </html>
 
-<style>
-  main:focus {
-    outline: none;
+<style is:global>
+  /* Curtain (page transitions): a black band with depth-coloured edges */
+  #curtain {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-curtain);
+    pointer-events: none;
+    visibility: hidden;
+    overflow: hidden;
+  }
+
+  /* No CSS transform here: GSAP owns it. */
+  .curtain__panel {
+    position: absolute;
+    inset: 0;
+    background: var(--c-curtain);
+  }
+
+  /* The fixed timeline never covers the end of a page */
+  body {
+    padding-bottom: 92px;
+  }
+
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: 60px;
+    }
+  }
+
+  .curtain__label {
+    position: absolute;
+    left: var(--pad);
+    right: var(--pad);
+    bottom: var(--pad);
+    display: grid;
+    gap: 0.6rem;
+    color: var(--c-panel-fg);
+  }
+
+  .curtain__z {
+    font-family: var(--f-mono);
+    font-size: 0.75rem;
+    color: var(--c-panel-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .curtain__title {
+    max-width: 20ch;
+    font-size: var(--t-xl);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
   }
 </style>

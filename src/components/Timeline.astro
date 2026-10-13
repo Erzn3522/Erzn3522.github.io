@@ -1,0 +1,317 @@
+---
+// The recording's timeline: persistent across pages, it is the navigation and the
+// "you are here" marker. Segments are real links (to the home replay or the table);
+// the playhead is moved by src/motion/replay.ts.
+import { segments, YEARS, LIVE, LIVE_LABEL, pct } from '../data/replay';
+
+const lanes = [
+  { id: 'work', label: 'Work' },
+  { id: 'study', label: 'Study' },
+] as const;
+const narrow = (s: { from: number; to: number }) => pct(s.to) - pct(s.from) < 7;
+---
+
+<nav class="tl" aria-label="Career timeline" transition:persist="timeline" data-timeline>
+  <div class="tl__inner">
+    <p class="tl__now mono" aria-hidden="true">
+      <span class="tl__dot"></span>LIVE <span>{LIVE_LABEL}</span>
+    </p>
+    <div class="tl__track">
+      <div class="tl__years" aria-hidden="true">
+        {YEARS.map((y) => (
+          <span class="mono" style={`left:${pct((y - 2020) * 12).toFixed(2)}%`}>{y}</span>
+        ))}
+      </div>
+      {lanes.map((lane) => (
+        <ul class="tl__lane" role="list" aria-label={lane.label}>
+          {segments
+            .filter((s) => s.lane === lane.id)
+            .map((s) => (
+              <li style={`left:${pct(s.from).toFixed(2)}%;width:${(pct(s.to) - pct(s.from)).toFixed(2)}%`}>
+                <a class:list={['tl__seg', { 'is-narrow': narrow(s) }]} href={s.href} data-seg={s.id} aria-label={`${s.label}: ${s.name}, ${s.period}`}>
+                  <span class="tl__bar"><span class="tl__label">{s.label}</span></span>
+                  <span class="tl__tip" aria-hidden="true">
+                    <span>{s.name}</span>
+                    <span class="mono">{s.period}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+        </ul>
+      ))}
+      <div class="tl__head" data-playhead style={`--x:${pct(LIVE).toFixed(2)}`} aria-hidden="true">
+        <span class="tl__line"></span>
+        <span class="tl__readout mono" data-playhead-label>LIVE</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+  .tl {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-header);
+    background: rgb(230 232 228 / 0.94);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--c-line);
+  }
+
+  .tl__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: var(--gutter);
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: 0.35rem var(--pad) 0.5rem;
+  }
+
+  .tl__now {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-bottom: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--c-fg);
+    white-space: nowrap;
+  }
+
+  .tl__now span:last-child {
+    color: var(--c-muted);
+  }
+
+  .tl__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-accent);
+    animation: rec 1.6s ease-in-out infinite;
+  }
+
+  @keyframes rec {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .tl__track {
+    position: relative;
+    container-type: inline-size;
+    padding-top: 1rem;
+  }
+
+  .tl__years {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1rem;
+  }
+
+  .tl__years span {
+    position: absolute;
+    top: 0;
+    font-size: 0.66rem;
+    color: var(--c-muted);
+    border-left: 1px solid var(--c-line);
+    padding-left: 0.25rem;
+    line-height: 1;
+  }
+
+  .tl__lane {
+    position: relative;
+    height: 26px;
+    list-style: none;
+  }
+
+  .tl__lane li {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    padding-right: 2px;
+  }
+
+  .tl__seg {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  .tl__bar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 18px;
+    padding-inline: 0.35rem;
+    overflow: hidden;
+    background: rgb(15 17 18 / 0.12);
+    background-image: linear-gradient(var(--c-accent) 0 0);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.45s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.3s;
+  }
+
+  .tl__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-stretch: 87%;
+    white-space: nowrap;
+  }
+
+  .is-narrow .tl__label {
+    visibility: hidden;
+  }
+
+  /* The segment the playhead is in reads as played */
+  .tl__seg.is-on .tl__bar {
+    background-color: var(--c-fg);
+    color: var(--c-bg);
+  }
+
+  .tl__tip {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    display: grid;
+    gap: 0.1rem;
+    width: max-content;
+    max-width: 18rem;
+    padding: 0.45rem 0.6rem;
+    background: var(--c-panel);
+    color: var(--c-panel-fg);
+    font-size: 0.78rem;
+    line-height: 1.3;
+    opacity: 0;
+    translate: 0 6px;
+    pointer-events: none;
+    transition: opacity 0.2s, translate 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  .tl__tip .mono {
+    font-size: 0.7rem;
+    color: var(--c-panel-muted);
+  }
+
+  .tl__lane li:last-child .tl__tip {
+    left: auto;
+    right: 0;
+  }
+
+  @media (hover: hover) {
+    .tl__seg:hover .tl__bar {
+      background-size: 100% 100%;
+      color: var(--c-on-accent);
+    }
+    .tl__seg:hover .tl__tip {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  .tl__seg:focus-visible {
+    outline-offset: 1px;
+  }
+
+  .tl__seg:focus-visible .tl__bar {
+    background-size: 100% 100%;
+    color: var(--c-on-accent);
+  }
+
+  .tl__seg:focus-visible .tl__tip {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Playhead: moved with translate in container units, never with left */
+  .tl__head {
+    position: absolute;
+    left: 0;
+    top: 0.85rem;
+    bottom: -0.2rem;
+    width: 0;
+    translate: calc(var(--x) * 1cqi) 0;
+    pointer-events: none;
+  }
+
+  .tl__line {
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--c-accent);
+  }
+
+  .tl__line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -5px;
+    width: 10px;
+    height: 10px;
+    background: var(--c-accent);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  .tl__readout {
+    position: absolute;
+    right: 8px;
+    top: -0.95rem;
+    padding: 0.05rem 0.35rem;
+    background: var(--c-accent);
+    color: var(--c-on-accent);
+    font-size: 0.66rem;
+    white-space: nowrap;
+  }
+
+  /* Near the start of the axis the readout flips to the right of the playhead */
+  .tl__head.is-early .tl__readout {
+    right: auto;
+    left: 8px;
+  }
+
+  @media (max-width: 767px) {
+    .tl__inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      padding-block: 0.25rem 0.4rem;
+    }
+    .tl__now {
+      display: none;
+    }
+    .tl__label {
+      font-size: 0.6rem;
+    }
+    .tl__tip {
+      display: none;
+    }
+    .tl__track {
+      padding-top: 0.2rem;
+    }
+    .tl__years {
+      display: none;
+    }
+    .tl__lane {
+      height: 24px;
+    }
+    .tl__bar {
+      height: 14px;
+      padding-inline: 0.2rem;
+    }
+    .tl__head {
+      top: 0;
+      bottom: 0;
+    }
+    .tl__readout {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tl__dot {
+      animation: none;
+    }
+  }
+</style>

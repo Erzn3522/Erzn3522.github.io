@@ -41,7 +41,7 @@ const t0 = top(sel);
   <p class="att-readout" aria-live="polite" data-readout>
     “{TOKENS[sel]}” attends most to “{TOKENS[t0.j]}” ({t0.v.toFixed(2)}).
   </p>
-  <p class="note att-gloss">{GLOSS} “berbattı” is split into the pieces “berbat” and “##tı”, the way WordPiece splits Turkish suffixes.</p>
+  <p class="note att-gloss">{GLOSS} “lagged” is split into the pieces “lag” and “##ged”, the way WordPiece splits a word it has not stored whole.</p>
 
   <div class="att-lower">
     <svg class="matrix" viewBox={`0 0 ${MW} ${MH}`} role="img" aria-labelledby="att-matrix-title">
@@ -104,7 +104,11 @@ const t0 = top(sel);
 
 <script>
   import { initAttention } from '../scripts/attention';
-  document.querySelectorAll<HTMLElement>('[data-attention]').forEach(initAttention);
+  import { onPage } from '../engine';
+  // The ClientRouter swaps pages without re-running scripts: init per page.
+  onPage(() => {
+    document.querySelectorAll<HTMLElement>('[data-attention]').forEach((el) => initAttention(el));
+  });
 </script>
 
 <style>

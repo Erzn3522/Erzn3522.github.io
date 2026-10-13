@@ -3,140 +3,190 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import HeroScene from '../components/HeroScene.astro';
 import Diagram from '../components/Diagram.astro';
-import { site, mailto } from '../lib/site';
-import { experience, education, skills } from '../data/experience';
+import { mailto } from '../lib/site';
+import { experience, skills } from '../data/experience';
+import { stops, live } from '../data/replay';
+import { range } from '../lib/format';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
-const titleOf = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
-// "May 2023 – Dec 2023" → "2023"; "Apr 2025 – present" → "2025 – present"
-const years = (period: string) => {
-  const [a, b] = period.replace(/[A-Z][a-z]{2} /g, '').split(' – ');
-  return !b || a === b ? a : `${a} – ${b}`;
-};
 ---
 
 <Base>
-  <section class="hero wrap" aria-labelledby="hero-title">
-    <div class="hero-text">
-      <h1 id="hero-title">Computer vision for robots that work outdoors.</h1>
-      <p class="hero-sub">
-        I build stereo vision and detection systems for agricultural and mobile robots. Currently at
-        Pek Automotive in Slovenia.
+  <!-- ───────── Live: the head of the recording ───────── -->
+  <section id="top" class="hero wrap" aria-labelledby="hero-title">
+    <div class="hero__text">
+      <h1 id="hero-title" class="hero__title" data-split="lines" data-intro data-lcp>
+        I make robots see well enough to pick fruit in&nbsp;sunlight.
+      </h1>
+      <p class="hero__sub" data-reveal="up" data-intro data-delay="0.2" data-lcp>
+        Computer vision engineer at Pek Automotive in Slovenia: calibration, stereo depth and detection, from
+        the algorithm to the field. Robotics and machine vision since 2020, replayed below.
       </p>
-      <p class="hero-actions">
-        <a class="button button-primary" href="#work">View projects</a>
-        <a class="button" href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV</a>
+      <p class="hero__actions" data-reveal="up" data-intro data-delay="0.3">
+        <a class="play play--solid" href="#replay" data-play-replay>Watch the replay <span class="play__arrow" aria-hidden="true">▶</span></a>
+        <a class="play" href={mailto}>Email me <span class="play__arrow" aria-hidden="true">→</span></a>
       </p>
+      <div class="hero__panels" data-reveal="fade" data-intro data-delay="0.45">
+        <div class="panel metric">
+          <p class="panel__bar"><span>METRIC</span><span>{live.period}</span></p>
+          <p class="metric__value">{live.metric.value}</p>
+          <p class="metric__context">{live.metric.context}</p>
+        </div>
+        <div class="panel log">
+          <p class="panel__bar"><span>LOG</span><span>{live.org}</span></p>
+          <ul role="list">
+            {live.log.map((l) => <li class="mono">{l}</li>)}
+          </ul>
+        </div>
+      </div>
     </div>
-    <div class="hero-scene">
-      <HeroScene />
+    <div class="hero__camera panel" data-reveal="clip" data-intro data-delay="0.1">
+      <p class="panel__bar">
+        <span>CAMERA</span><span><span class="rec" aria-hidden="true"></span>LIVE</span>
+      </p>
+      <div class="hero__scene"><HeroScene /></div>
+      <p class="hero__open">
+        <a class="link" href={live.href} data-title>{live.title}</a>
+      </p>
     </div>
   </section>
 
-  <section id="work" class="section wrap" aria-labelledby="work-title">
-    <div class="split">
-      <h2 id="work-title" class="content section-title">Selected work</h2>
+  <!-- ───────── Replay: scrolling rewinds to 2020 ───────── -->
+  <section id="replay" class="replay wrap" aria-labelledby="replay-title" data-replay>
+    <div class="replay__head">
+      <h2 id="replay-title" class="section-title" data-split="lines">Replay</h2>
+      <p class="replay__hint">
+        Scroll to rewind from today to 2020, or pick a track on the timeline at the bottom of the screen. Each
+        stop shows what that system saw, with one real number.
+        <span class="replay__playing mono" aria-hidden="true">Playing. Scroll or press any key to take over.</span>
+      </p>
     </div>
-    <ul class="work-list" role="list">
-      {projects.map((p) => (
-        <li>
-          <a class="work-row" href={`/projects/${p.id}`}>
-            {/* Title first in the DOM so it leads the link's accessible name */}
-            <span class="work-text">
-              <span class="work-title">{p.data.title}</span>
-              <span class="work-outcome">{p.data.outcome}</span>
-            </span>
-            <span class="work-meta note">
-              {p.data.employer}
-              <br />
-              {years(p.data.period)}
-            </span>
-            <span class="work-thumb" aria-hidden="true">
-              <Diagram name={p.data.figure?.diagram} compact />
-            </span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section id="experience" class="section wrap" aria-labelledby="experience-title">
-    <div class="split">
-      <h2 id="experience-title" class="content section-title">Experience</h2>
-    </div>
-    <ol class="timeline" role="list">
-      {experience.map((r) => (
-        <li class="split">
-          <p class="margin note dates">
-            <span>{r.start} –</span>
-            <span>{r.end}</span>
+    <div class="replay__grid">
+      <div class="viewer" data-viewer aria-hidden="true">
+        <div class="panel viewer__camera">
+          <p class="panel__bar">
+            <span>CAMERA</span>
+            {stops.map((s, i) => <span data-for={s.id} hidden={i > 0}>{s.period}</span>)}
           </p>
-          <div class="content entry">
-            <h3>{r.role}, {r.org}</h3>
-            <p class="note">{r.place}</p>
-            <p class="entry-summary">{r.summary}</p>
-            {r.projects && (
-              <p class="entry-links">
-                {r.projects.length > 1 ? 'Projects: ' : 'Project: '}
-                {r.projects.map((slug, i) => (
-                  <>
-                    <a href={`/projects/${slug}`}>{titleOf[slug]}</a>
-                    {i < r.projects!.length - 1 ? ', ' : ''}
-                  </>
-                ))}
+          <div class="viewer__frame">
+            {stops.map((s, i) => (
+              <div class="viewer__fig" data-for={s.id} hidden={i > 0}>
+                {s.panel.kind === 'figure' ? (
+                  <Diagram name={s.panel.diagram as any} />
+                ) : (
+                  <div class="viewer__type">
+                    <span class="mono">NO FIGURE</span>
+                  </div>
+                )}
+                <p class="viewer__caption mono">{s.panel.kind === 'figure' ? s.panel.caption : s.panel.small}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="viewer__row">
+          <div class="panel metric">
+            <p class="panel__bar"><span>METRIC</span></p>
+            {stops.map((s, i) => (
+              <div data-for={s.id} hidden={i > 0}>
+                <p class="metric__value">{s.metric.value}</p>
+                <p class="metric__context">{s.metric.context}</p>
+              </div>
+            ))}
+          </div>
+          <div class="panel log">
+            <p class="panel__bar"><span>LOG</span></p>
+            {stops.map((s, i) => (
+              <ul role="list" data-for={s.id} hidden={i > 0}>
+                {s.log.map((l) => <li class="mono" data-log-line>{l}</li>)}
+              </ul>
+            ))}
+          </div>
+        </div>
+      </div>
+      <ol class="stops" role="list">
+        {stops.map((s) => (
+          <li id={`t-${s.id}`} class="stop" data-stop={s.id} data-at={s.at} data-track={s.track} data-label={s.period}>
+            <p class="stop__meta mono">{s.period}</p>
+            <h3 class="stop__title">{s.title}</h3>
+            <p class="stop__org">{s.org}</p>
+            <p class="sr-only">
+              {s.metric.value} {s.metric.context}. {s.log.join('. ')}.
+            </p>
+            {s.href && (
+              <p class="stop__open">
+                <a class="play" href={s.href} data-dest={s.title}>
+                  <span>Open topic</span>
+                  <span class="play__arrow" aria-hidden="true">→</span>
+                </a>
               </p>
             )}
-          </div>
-        </li>
-      ))}
-    </ol>
-    <div class="split education">
-      <p class="margin note dates"><span>Graduated</span><span>{education.date}</span></p>
-      <div class="content">
-        <h3>{education.degree}, {education.school}</h3>
-        <p class="note">{education.place}</p>
-      </div>
+          </li>
+        ))}
+      </ol>
+
     </div>
   </section>
 
-  <section id="about" class="section wrap" aria-labelledby="about-title">
-    <div class="split">
-      <h2 id="about-title" class="content section-title">About</h2>
-      <div class="content prose">
-        <p>
-          I am a computer vision engineer with about five years in robotics and machine vision. Most
-          of my work sits between the camera and the robot: camera calibration, stereo depth, 3D
-          coordinate transforms, and real-time detection on edge hardware such as NVIDIA Jetson and
-          Intel RealSense. I build production pipelines in Python and C++ and stay with them from the
-          algorithm to field deployment. Away from work I ride motorcycles and dive, as a 1-star
-          diver.
-        </p>
+  <!-- ───────── All topics: the skimmable index ───────── -->
+  <section id="all" class="all wrap" aria-labelledby="all-title">
+    <h2 id="all-title" class="section-title" data-split="lines">All topics</h2>
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Topic</th><th scope="col">Where</th><th scope="col">When</th><th scope="col">Result</th></tr>
+      </thead>
+      <tbody>
+        {projects.map((p) => (
+          <tr>
+            <th scope="row"><a class="link" href={`/projects/${p.id}`} data-title>{p.data.title}</a></th>
+            <td>{p.data.employer}</td>
+            <td class="mono">{range(p.data.period)}</td>
+            <td>{p.data.metric ?? ''}</td>
+          </tr>
+        ))}
+        {experience
+          .filter((r) => !r.projects)
+          .map((r) => (
+            <tr>
+              <th scope="row">{r.role}</th>
+              <td>{r.org}</td>
+              <td class="mono">{r.start} to {r.end}</td>
+              <td>{r.summary}</td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ───────── Off the record ───────── -->
+  <section id="about" class="about wrap" aria-labelledby="about-title">
+    <div class="about__grid">
+      <div class="about__text">
+        <h2 id="about-title" class="section-title" data-split="lines">Off the record</h2>
+        <div class="prose">
+          <p>
+            Most of my work sits between the camera and the robot: calibration, stereo depth, 3D coordinate
+            transforms and real-time detection on edge hardware such as NVIDIA Jetson and Intel RealSense. I
+            build production pipelines in Python and C++ and stay with them from the algorithm to the field,
+            which is where the hard cases are.
+          </p>
+          <p>
+            B.Sc. in Mechatronics Engineering, Marmara University, 2021. I live in Logatec, ride motorcycles and
+            dive, as a 1-star diver.
+          </p>
+        </div>
       </div>
-      <dl class="content skills">
+      <div class="panel about__panel" aria-hidden="true">
+        <p class="panel__bar"><span>CAMERA</span><span>off duty</span></p>
+        <p class="about__nodata mono">No sensor data.</p>
+      </div>
+      <dl class="skills">
         {skills.map((s) => (
           <div>
-            <dt>{s.group}</dt>
+            <dt class="meta">{s.group}</dt>
             <dd>{s.items}</dd>
           </div>
         ))}
       </dl>
-    </div>
-  </section>
-
-  <section id="contact" class="section wrap" aria-labelledby="contact-title">
-    <div class="split">
-      <h2 id="contact-title" class="content section-title">Contact</h2>
-      <div class="content">
-        <p class="contact-lead">Email is the quickest way to reach me.</p>
-        <p><a class="contact-email" href={mailto}>{site.email}</a></p>
-        <ul class="contact-links" role="list">
-          <li><a href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV (PDF)</a></li>
-          {site.links.map((l) => (
-            <li><a href={l.href} rel="me">{l.label}</a></li>
-          ))}
-        </ul>
-        <p class="note">Based in {site.location}.</p>
-      </div>
     </div>
   </section>
 </Base>
@@ -146,242 +196,406 @@ const years = (period: string) => {
   .hero {
     display: grid;
     gap: var(--space-4) var(--gutter);
-    padding-block: var(--space-3) var(--space-5);
+    padding-top: clamp(0.5rem, 1.5vw, 1.5rem);
   }
 
-  .hero h1 {
-    font-size: clamp(2.1rem, 1.3rem + 3.6vw, var(--step-5));
-    line-height: 1.04;
-    max-width: 14ch;
+  .hero__title {
+    font-size: clamp(2.3rem, 0.9rem + 3.6vw, 4.4rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-left: -0.04em;
   }
 
-  .hero-sub {
+  .hero__sub {
     margin-top: var(--space-3);
-    font-size: var(--step-1);
-    line-height: 1.5;
-    max-width: 34ch;
+    max-width: 44ch;
+    color: var(--c-muted);
   }
 
-  .hero-actions {
+  .hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.6rem;
     margin-top: var(--space-4);
   }
 
-  @media (min-width: 1000px) {
+  .hero__panels {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 6px;
+    margin-top: var(--space-4);
+  }
+
+  .hero__camera {
+    align-self: start;
+  }
+
+  .rec {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    background: var(--c-panel-accent);
+    animation: rec 1.6s ease-in-out infinite;
+  }
+
+  @keyframes rec {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .hero__scene {
+    padding: 0.75rem;
+  }
+
+  .hero__open {
+    padding: 0 0.75rem 0.8rem;
+    font-size: var(--t-s);
+  }
+
+  /* Phones: text, then the camera, then the metric */
+  @media (max-width: 899px) {
+    .hero__text {
+      display: contents;
+    }
+    .hero__panels {
+      order: 2;
+      grid-template-columns: 1fr;
+      margin-top: 0;
+    }
+    .hero__panels .log {
+      display: none;
+    }
+  }
+
+  @media (min-width: 900px) {
     .hero {
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      align-items: start;
-      padding-top: var(--space-4);
     }
-    .hero-text {
+    .hero__text {
       grid-column: 1 / span 5;
-      padding-top: var(--space-2);
     }
-    .hero-scene {
+    .hero__camera {
       grid-column: 6 / -1;
     }
   }
 
-  /* ---------- Sections ---------- */
-  .section {
-    padding-block: var(--space-6) 0;
+  /* Metric and log panels (hero and viewer) */
+  .metric__value {
+    padding: 0.6rem 0.75rem 0;
+    font-size: clamp(2rem, 1.2rem + 2.4vw, 3.4rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--c-panel-accent);
   }
 
-  .section-title {
-    font-size: var(--step-4);
-    margin-bottom: var(--space-4);
+  .metric__context {
+    padding: 0.4rem 0.75rem 0.75rem;
+    font-size: var(--t-s);
+    line-height: 1.35;
+    color: var(--c-panel-fg);
   }
 
-  /* ---------- Selected work ---------- */
-  .work-list {
+  .log ul {
     list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--rule);
+    padding: 0.5rem 0.75rem 0.75rem;
   }
 
-  .work-list li {
-    border-bottom: 1px solid var(--rule);
+  .log li {
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--c-panel-fg);
   }
 
-  .work-row {
+  .log li::before {
+    content: '> ';
+    color: var(--c-panel-accent);
+  }
+
+  /* ---------- Section heads ---------- */
+  .section-title {
+    font-size: var(--t-xl);
+    font-stretch: 112%;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  /* ---------- Replay ---------- */
+  .replay {
+    padding-top: var(--space-7);
+  }
+
+  .replay__head {
     display: grid;
     gap: var(--space-2) var(--gutter);
-    padding-block: var(--space-4);
-    color: var(--ink);
-    text-decoration: none;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--c-line);
   }
 
-  .work-meta {
-    order: -1;
+  .replay__hint {
+    max-width: 52ch;
+    color: var(--c-muted);
   }
 
-  .work-title {
+  .replay__playing {
+    display: none;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: #b23c0c;
+  }
+
+  :global(html.is-playing) .replay__playing {
     display: block;
-    font-family: var(--font-head);
+  }
+
+  .stops {
+    list-style: none;
+  }
+
+  .stop {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    min-height: 78vh;
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .stop__meta {
+    font-size: 0.8rem;
+    color: #b23c0c;
+  }
+
+  .stop__title {
+    font-size: var(--t-l);
     font-stretch: 112%;
     font-weight: 700;
-    font-size: var(--step-3);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    text-wrap: balance;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    max-width: 18ch;
   }
 
-  .work-outcome {
-    display: block;
+  .stop__org {
+    color: var(--c-muted);
+  }
+
+  .stop__open {
     margin-top: var(--space-2);
-    max-width: 52ch;
   }
 
-  .work-row:hover .work-title {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.12em;
+  .viewer {
+    position: sticky;
+    top: calc(var(--space-3));
+    align-self: start;
+    display: grid;
+    gap: 6px;
   }
 
-  .work-thumb {
+  .viewer__frame {
     position: relative;
-    display: block;
-    max-width: 320px;
-    border: 1px solid var(--rule);
+    padding: 0.75rem;
   }
 
-  /* A detection box answers hover and focus */
-  .work-thumb::after {
+  /* Frame drop on a cut: one black frame, then the next topic */
+  .viewer.is-drop .viewer__frame::after {
     content: '';
     position: absolute;
-    inset: -8px;
-    border: 2px solid var(--detect);
-    opacity: 0;
+    inset: 0;
+    background: #000;
   }
 
-  .work-row:hover .work-thumb::after,
-  .work-row:focus-visible .work-thumb::after {
-    opacity: 1;
+  .viewer__fig[hidden],
+  [data-for][hidden] {
+    display: none;
   }
 
-  @media (min-width: 860px) {
-    .work-row {
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      align-items: start;
-    }
-    .work-meta {
-      grid-column: 1 / span 3;
-      grid-row: 1;
-      padding-top: 0.5rem;
-    }
-    .work-text {
-      grid-column: 4 / span 6;
-      grid-row: 1;
-    }
-    .work-thumb {
-      grid-column: 10 / -1;
-      grid-row: 1;
-      width: 100%;
-    }
+  .viewer__type {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 6;
+    border: 1px dashed var(--c-panel-line);
+    font-size: clamp(1.4rem, 1rem + 1.2vw, 2rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    color: var(--c-panel-accent);
   }
 
-  /* ---------- Experience ---------- */
-  .timeline {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .dates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 0.3em;
-    padding-top: 0.2rem;
-  }
-
-  .entry {
-    position: relative;
-    padding-bottom: var(--space-4);
-    max-width: 62ch;
-  }
-
-  .entry h3,
-  .education h3 {
-    font-size: var(--step-1);
-    line-height: 1.25;
-  }
-
-  .entry .note,
-  .education .note {
-    margin-top: 0.2rem;
-  }
-
-  .entry-summary {
+  .viewer__caption {
     margin-top: 0.6rem;
+    font-size: 0.72rem;
+    color: var(--c-panel-muted);
   }
 
-  .entry-links {
-    margin-top: 0.5rem;
-    font-size: var(--step--1);
-    font-family: var(--font-head);
-    color: var(--mute);
+  .viewer__row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 6px;
   }
 
-  @media (min-width: 860px) {
-    .dates {
-      flex-direction: column;
+  @media (min-width: 900px) {
+    .replay__head {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: end;
     }
-    .timeline .entry {
-      padding-left: var(--space-3);
-      border-left: 1px solid var(--rule);
+    .replay__head .section-title {
+      grid-column: 1 / span 5;
     }
-    /* Square tick where each role starts */
-    .timeline .entry::before {
-      content: '';
-      position: absolute;
-      left: -5px;
-      top: 0.55rem;
-      width: 9px;
-      height: 9px;
-      background: var(--ink);
+    .replay__hint {
+      grid-column: 6 / -1;
     }
-    .timeline li:last-child .entry {
-      padding-bottom: var(--space-3);
+    .replay__grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--gutter);
     }
-    .education .content {
-      padding-left: var(--space-3);
+    .stops {
+      grid-column: 1 / span 5;
+      grid-row: 1;
     }
-  }
-
-  @media (max-width: 859px) {
-    .timeline li + li {
-      border-top: 1px solid var(--rule);
-      padding-top: var(--space-3);
+    .viewer {
+      grid-column: 6 / -1;
+      grid-row: 1;
+      margin-top: var(--space-4);
     }
   }
 
-  .education {
+  /* Phones: the viewer is a sticky band at the top while the stops scroll under it */
+  @media (max-width: 899px) {
+    .viewer {
+      top: 0;
+      z-index: 2;
+      padding-block: 0.4rem;
+      background: var(--c-bg);
+    }
+    .viewer__row .log {
+      display: none;
+    }
+    .viewer__row {
+      grid-template-columns: 1fr;
+    }
+    .viewer__frame {
+      padding: 0.5rem;
+    }
+    /* Figures shrink into the band: keep their labels at the figure's own scale */
+    .viewer :global(.diagram text) {
+      font-size: 15px;
+    }
+    .viewer :global(.diagram) {
+      max-height: 26vh;
+      margin-inline: auto;
+      width: auto;
+    }
+    .viewer__type {
+      aspect-ratio: auto;
+      height: 26vh;
+    }
+    .metric__value {
+      font-size: 1.6rem;
+      padding-top: 0.4rem;
+    }
+    .stop {
+      min-height: 48vh;
+      /* Jumping to a stop lands its title below the sticky band */
+      scroll-margin-top: 52vh;
+    }
+  }
+
+  /* ---------- All topics ---------- */
+  .all {
+    padding-top: var(--space-7);
+  }
+
+  .table {
+    width: 100%;
     margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--rule);
+    border-collapse: collapse;
+    font-size: var(--t-s);
   }
 
-  /* ---------- About ---------- */
+  .table th,
+  .table td {
+    padding: 0.75rem 0.75rem 0.75rem 0;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .table thead th {
+    font-weight: 500;
+    color: var(--c-muted);
+  }
+
+  .table tbody th {
+    font-size: var(--t-body);
+    font-weight: 600;
+    max-width: 28ch;
+  }
+
+  .table td.mono {
+    white-space: nowrap;
+    font-size: 0.78rem;
+  }
+
+  @media (max-width: 767px) {
+    .table thead {
+      display: none;
+    }
+    .table tr {
+      display: grid;
+      gap: 0.2rem;
+      padding-block: 0.8rem;
+      border-bottom: 1px solid var(--c-line);
+    }
+    .table th,
+    .table td {
+      padding: 0;
+      border: 0;
+    }
+  }
+
+  /* ---------- Off the record ---------- */
+  .about {
+    padding-top: var(--space-7);
+  }
+
+  .about__grid {
+    display: grid;
+    gap: var(--space-4) var(--gutter);
+  }
+
+  .about .prose {
+    margin-top: var(--space-3);
+  }
+
+  .about__panel {
+    align-self: start;
+  }
+
+  .about__nodata {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    font-size: 0.8rem;
+    color: var(--c-panel-muted);
+  }
+
   .skills {
-    margin: var(--space-4) 0 0;
-    max-width: var(--measure);
+    border-top: 1px solid var(--c-line);
   }
 
   .skills div {
     display: grid;
-    gap: 0.1rem var(--gutter);
+    gap: 0.15rem var(--gutter);
     padding-block: 0.7rem;
-    border-top: 1px solid var(--rule);
-  }
-
-  .skills dt {
-    font-family: var(--font-head);
-    font-weight: 600;
-    font-size: var(--step--1);
-    padding-top: 0.2rem;
+    border-bottom: 1px solid var(--c-line);
   }
 
   .skills dd {
@@ -390,35 +604,28 @@ const years = (period: string) => {
 
   @media (min-width: 600px) {
     .skills div {
-      grid-template-columns: 12rem 1fr;
+      grid-template-columns: 11rem 1fr;
     }
   }
 
-  /* ---------- Contact ---------- */
-  .contact-email {
-    display: inline-block;
-    margin-top: var(--space-2);
-    font-family: var(--font-head);
-    font-weight: 700;
-    font-stretch: 105%;
-    font-size: clamp(1.15rem, 0.8rem + 2vw, var(--step-3));
-    line-height: 1.2;
-    overflow-wrap: anywhere;
+  @media (min-width: 900px) {
+    .about__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .about__text {
+      grid-column: 1 / span 6;
+    }
+    .about__panel {
+      grid-column: 8 / -1;
+    }
+    .skills {
+      grid-column: 1 / -1;
+    }
   }
 
-  .contact-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.6rem;
-    list-style: none;
-    margin: var(--space-4) 0 var(--space-3);
-    padding: 0;
-    font-family: var(--font-head);
-    font-weight: 500;
-  }
-
-  .contact-links a {
-    display: inline-block;
-    padding-block: 0.35rem;
+  @media (prefers-reduced-motion: reduce) {
+    .rec {
+      animation: none;
+    }
   }
 </style>

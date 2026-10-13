@@ -1,6 +1,8 @@
 # erzn3522.github.io
 
-Portfolio of Abdullah Erzin, computer vision engineer. Astro, TypeScript, plain CSS. No analytics, no third-party scripts, fonts self-hosted.
+Portfolio of Abdullah Erzin, computer vision engineer. Astro, TypeScript, plain CSS, GSAP + Lenis (bundled, self-hosted). No analytics, no third-party scripts, fonts self-hosted.
+
+Design concept "Approach": scrolling a page is a picking arm closing in on its target. A depth driver maps scroll to Z (7.5 m → in reach) and drives the rail, the readout and the accent colour. See [`DESIGN.md`](DESIGN.md).
 
 - Brief: [`INITIAL.md`](INITIAL.md)
 - Design plan and decisions: [`DESIGN.md`](DESIGN.md)
@@ -33,12 +35,16 @@ Writes `/` and one project page at 1440, 768 and 390 px to `./shots/`, in light,
 
 ### OG image and touch icon
 
-`npm run og` regenerates `public/og.png` and `public/apple-touch-icon.png` from the calibration-board motif.
+`public/og.png` is a 1200×630 capture of the live hero (made with the awwwards skill's `og.mjs` against the production build). `public/favicon.svg` is the identity mark; `public/apple-touch-icon.png` is a 180 px render of it. The older `npm run og` script still draws the previous calibration-board motif: do not run it unless you want that look back.
 
 ## Where things are
 
 | Path | What |
 |---|---|
+| `src/engine/` | Motion engine: Lenis on the GSAP ticker, reveals, loader, page transitions, ClientRouter adapter (`astro.ts`) |
+| `src/motion/depth.ts` | The depth driver: scroll → Z → rail, readout, `--c-depth` accent; idle sensor noise |
+| `src/motion/setup.ts` | Loader format/exit, sensor-sweep page transition, lock-on targets |
+| `src/components/DepthRail.astro`, `Loader.astro` | Depth rail (wide screens) / top depth bar (phones), first-visit loader |
 | `src/lib/scene.ts` | Seeded stereo orchard scene: geometry, disparity, colormap, canvas and SVG drawing |
 | `src/scripts/hero.ts` | Interactive canvas (divider, boxes, keyboard, reduced motion) |
 | `src/components/HeroScene.astro` | Hero figure: SVG fallback, canvas, caption, legend |

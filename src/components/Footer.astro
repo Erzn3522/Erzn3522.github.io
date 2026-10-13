@@ -1,16 +1,108 @@
 ---
-import { site } from '../lib/site';
+// End of recording: the contact finale on every page.
+import { site, mailto } from '../lib/site';
 const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer wrap">
-  <p class="note">
-    {site.name}, {site.location}. {year}.
+<footer class="site-footer wrap" id="contact">
+  <p class="end mono">End of recording. Start the next one.</p>
+  <h2 class="visually-hidden">Contact</h2>
+  <a class="email" href={mailto}>
+    <span class="email__text">{site.email}</span>
+  </a>
+  <div class="row">
+    <a class="play play--solid" href={site.cv} download="Abdullah-Erzin-CV.pdf">Download CV <span class="play__arrow" aria-hidden="true">↓</span></a>
+    <ul class="links" role="list">
+      {site.links.map((l) => (
+        <li><a href={l.href} rel="me">{l.label}</a></li>
+      ))}
+    </ul>
+    <p class="meta">
+      {site.location}, <span class="mono" data-local-time>local time</span>
+    </p>
+  </div>
+  <p class="meta colophon">
+    {site.name}, {year}. Set in Archivo and IBM Plex Mono. Every scene and figure is drawn in code; no employer
+    data or imagery.
   </p>
 </footer>
 
 <style>
   .site-footer {
-    padding-block: var(--space-4) var(--space-5);
+    margin-top: var(--space-7);
+    padding-block: var(--space-5) var(--space-4);
+    border-top: 1px solid var(--c-line);
+  }
+
+  .end {
+    font-size: 0.8rem;
+    color: var(--c-muted);
+  }
+
+  .email {
+    display: inline-block;
+    margin-top: var(--space-3);
+    font-size: clamp(1.05rem, 4.4vw, 4.4rem);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+  }
+
+  /* Played range under the address: it fills on hover like buffered video */
+  .email__text {
+    background:
+      linear-gradient(var(--c-accent) 0 0) left 100% / 0% 0.12em no-repeat,
+      linear-gradient(var(--c-line) 0 0) left 100% / 100% 0.12em no-repeat;
+    padding-bottom: 0.08em;
+    transition: background-size 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  .email__text {
+    transition: background-size 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), color 0.3s;
+  }
+
+  @media (hover: hover) {
+    .email:hover .email__text {
+      background-size: 100% 100%, 100% 0.12em;
+    }
+  }
+
+  .email:focus-visible .email__text {
+    background-size: 100% 100%, 100% 0.12em;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-top: var(--space-5);
+  }
+
+  .links {
+    display: flex;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .links a {
+    display: inline-block;
+    padding-block: 0.3rem;
+    color: var(--c-muted);
+  }
+
+  @media (hover: hover) {
+    .links a:hover {
+      color: var(--c-fg);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+
+  .colophon {
+    margin-top: var(--space-5);
+    max-width: 70ch;
   }
 </style>

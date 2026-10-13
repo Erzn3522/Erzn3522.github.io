@@ -1,56 +1,82 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { AXIS } from '../data/replay';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Base title="Page not found" noindex>
+<Base title="Page not found" noindex at={AXIS.to - 0.3} label="No messages here" track="">
   <section class="missing wrap">
-    <div class="split">
-      <div class="content">
-        <h1>There is no page at this address.</h1>
-        <p class="lead">
-          The link may be from the old version of this site, or it may have a typo. Everything that
-          was here now lives on the <a href="/">home page</a> or on one of the project pages.
-        </p>
-        <h2>Projects</h2>
-        <ul>
-          {projects.map((p) => <li><a href={`/projects/${p.id}`}>{p.data.title}</a></li>)}
-        </ul>
-      </div>
+    <div class="panel frame" aria-hidden="true">
+      <p class="panel__bar"><span>CAMERA</span><span>past the end of the recording</span></p>
+      <p class="frame__text mono">No messages at this timestamp.</p>
     </div>
+    <h1 class="title">Seek past end of recording.</h1>
+    <p class="lead">
+      There is no page at this address. The link may be from the old version of this site, or it may have a
+      typo.
+    </p>
+    <p class="actions">
+      <a class="play play--solid" href="/">Back to live <span class="play__arrow" aria-hidden="true">→</span></a>
+    </p>
+    <h2 class="list-title mono">Topics</h2>
+    <ul class="list" role="list">
+      {projects.map((p) => <li><a class="link" href={`/projects/${p.id}`}>{p.data.title}</a></li>)}
+    </ul>
   </section>
 </Base>
 
 <style>
   .missing {
-    padding-block: var(--space-5);
+    padding-block: var(--space-3) var(--space-4);
   }
 
-  h1 {
-    font-size: clamp(2rem, 1.4rem + 2.6vw, var(--step-5));
+  .frame__text {
+    display: grid;
+    place-items: center;
+    height: clamp(9rem, 22vh, 14rem);
+    font-size: 0.85rem;
+    color: var(--c-panel-muted);
+  }
+
+  .title {
+    margin-top: var(--space-5);
     max-width: 16ch;
+    font-size: var(--t-xl);
+    font-stretch: 112%;
+    font-weight: 750;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
   }
 
   .lead {
     margin-top: var(--space-3);
     max-width: 52ch;
-    font-size: var(--step-1);
-    line-height: 1.5;
+    font-size: var(--t-m);
+    line-height: 1.45;
   }
 
-  h2 {
+  .actions {
+    margin-top: var(--space-4);
+  }
+
+  .list-title {
     margin-top: var(--space-5);
-    font-size: var(--step-2);
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--c-muted);
   }
 
-  ul {
+  .list {
+    list-style: none;
     margin-top: var(--space-2);
-    padding-left: 1.1em;
+    display: grid;
+    gap: 0.6rem;
   }
 
-  li + li {
-    margin-top: 0.4rem;
+  .list a {
+    display: inline-block;
+    padding-block: 0.2rem;
   }
 </style>
