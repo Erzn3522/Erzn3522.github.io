@@ -27,3 +27,19 @@ cracks → attention arcs → his name.
   pointer parallax, a slow idle drift and a per-point sensor jitter). Reduced motion: no drift, no parallax,
   scenes swap instead of morph.
 - No WebGL: the page is plain readable text on black.
+
+## Intro: Q7, the survey robot (overlay on the home page, branch `feature/intro-calibration`)
+- **Idea:** before the portfolio, a small wheeled robot made of the same points rolls in with a clipboard and
+  asks four questions, like a street surveyor. Replies come from a pool (dry engineer, self-deprecating,
+  dramatic AI), one picked at random per answer. At the end it reads your "profile", waves, and dissolves
+  into the orchard, which is the first scene of the home page.
+- **Signature:** the robot is rigged. Twelve rigid parts (head, eyes, LED mouth, antenna, wheels, arms,
+  clipboard, pen) move by per-part matrices in the same shader as the home cloud. Wheels spin with the
+  distance travelled; the antenna is a spring; it looks at the pointer, reads the clipboard, ticks the box.
+- **Subtitles** sit bottom centre on a black scrim; answers are pill buttons that fill on hover.
+- **Sound:** all synthesised (Web Audio): typewriter key per character, robot voice blip per syllable,
+  carriage bell at the end of a line, pen scratch, wheel motor. Off until the first click; toggle bottom left.
+- **Hand-over:** shown on every visit (a `#hash` link skips it, and so does the corner button). The home loop waits; the intro ends on the home page's first frame (same orchard seed, same
+  point count from `deviceCloudOpts()`, same camera formula and pointer), then the home loop starts from that
+  pointer with no easing and the overlay is removed in the same frame. The hero copy fades in after.
+- **Reduced motion:** no roll-in, no gestures, text appears whole, no dissolve. **No WebGL:** subtitles only.

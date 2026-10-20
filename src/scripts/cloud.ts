@@ -1,7 +1,7 @@
 // The home controller. ONE clock (this rAF loop) drives the point cloud, the camera and the
 // live labels. Scroll position picks the chapter and the morph; the pointer turns the camera;
 // holding anywhere (or Space, or the toggle) swaps the depth map for the camera colours.
-import { createCloud, type Camera } from '../lib/cloud-gl';
+import { createCloud, deviceCloudOpts, type Camera } from '../lib/cloud-gl';
 import * as S from '../lib/shapes';
 import type { Chapter, ShapeKey } from '../data/chapters';
 
@@ -18,13 +18,9 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
   if (!canvas || !labelsEl || !sections.length) return;
 
   const small = matchMedia('(max-width: 767px)').matches;
-  // Fewer points on modest hardware from the start; the loop trims further if frames run long
-  const hw = navigator as Navigator & { deviceMemory?: number };
-  const low = (hw.hardwareConcurrency ?? 8) <= 4 || (hw.deviceMemory ?? 8) <= 3;
-  const share = low ? 0.5 : small ? 0.85 : 1;
   let cloud: ReturnType<typeof createCloud> = null;
   try {
-    cloud = createCloud(canvas, { count: Math.round(S.N * share), maxDpr: small || low ? 1.5 : 2, minSize: small ? 8 : 6.5 });
+    cloud = createCloud(canvas, deviceCloudOpts());
   } catch {
     cloud = null;
   }
@@ -226,6 +222,8 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
   const cam: Camera = { ...chapters[0].cam, target: [...chapters[0].cam.target] };
   let current = -1;
   let running = true;
+  let started = false;
+  let snap = false; // first frame after the intro: land exactly on the goal, no easing
   let last = performance.now();
 
   function frame(now: number) {
@@ -241,7 +239,8 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
     }
     const a = chapters[i].cam;
     const b = chapters[Math.min(i + 1, chapters.length - 1)].cam;
-    const k = reduce.matches ? 1 : 1 - Math.pow(0.0015, dt); // camera eases toward its goal
+    const k = reduce.matches || snap ? 1 : 1 - Math.pow(0.0015, dt); // camera eases toward its goal
+    snap = false;
     const goal = {
       target: [0, 1, 2].map((j) => lerp(a.target[j], b.target[j], move)),
       dist: lerp(a.dist, b.dist, move),
@@ -275,6 +274,7 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
   // Render only while the tab is visible and the canvas is on screen
   let onScreen = true;
   const wake = () => {
+    if (!started) return;
     const should = !document.hidden && onScreen;
     if (should && !running) {
       running = true;
@@ -290,10 +290,25 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
 
   measure();
   setPair(0);
-  requestAnimationFrame((n) => {
-    last = n;
-    frame(n);
-    root.classList.add('is-live');
-    warmNext();
-  });
+  const begin = () =>
+    requestAnimationFrame((n) => {
+      started = true;
+      last = n;
+      frame(n);
+      root.classList.add('is-live');
+      dispatchEvent(new Event('cloud:live'));
+      warmNext();
+    });
+  // The intro draws the orchard's first frame itself, then hands over the pointer it used so this
+  // loop starts from the very same camera; until then the home cloud stays idle
+  if (document.documentElement.dataset.intro === 'on') {
+    addEventListener('intro:handoff', (e) => {
+      const d = (e as CustomEvent<{ x: number; y: number }>).detail;
+      pointer.x = pointer.tx = d.x;
+      pointer.y = pointer.ty = d.y;
+      snap = true;
+      root.classList.add('is-instant');
+      begin();
+    }, { once: true });
+  } else begin();
 }

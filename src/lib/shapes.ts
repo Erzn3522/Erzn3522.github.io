@@ -11,6 +11,7 @@ export interface Shape {
   pos: Float32Array; // N * 3
   col: Float32Array; // N * 3, the "camera view" colours
   anchors: { p: [number, number, number]; r: number; label?: string }[]; // things the HTML can track
+  part: Float32Array; // N, which rigid part each point belongs to (only the intro robot uses more than 0)
 }
 
 function rng(seed: number) {
@@ -30,10 +31,13 @@ class Builder {
   pos: number[] = [];
   col: number[] = [];
   anchors: Shape['anchors'] = [];
+  parts: number[] = [];
+  part = 0; // points added from now on belong to this part
   constructor(public r: () => number) {}
   add(x: number, y: number, z: number, c: RGB, jitter = 0.08) {
     const k = 1 + (this.r() - 0.5) * jitter;
     this.pos.push(x, y, z);
+    this.parts.push(this.part);
     this.col.push(c[0] * k, c[1] * k, c[2] * k);
   }
   gauss() {
@@ -122,10 +126,12 @@ class Builder {
       const i = Math.floor(this.r() * count) * 3;
       this.pos.push(this.pos[i] + this.gauss() * 0.004, this.pos[i + 1] + this.gauss() * 0.004, this.pos[i + 2] + this.gauss() * 0.004);
       this.col.push(this.col[i], this.col[i + 1], this.col[i + 2]);
+      this.parts.push(this.parts[i / 3]);
       count++;
     }
     const pos = new Float32Array(N * 3);
     const col = new Float32Array(N * 3);
+    const part = new Float32Array(N);
     const order = Array.from({ length: count }, (_, i) => i);
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(this.r() * (i + 1));
@@ -135,8 +141,9 @@ class Builder {
       const s = order[k] * 3;
       pos.set([this.pos[s], this.pos[s + 1], this.pos[s + 2]], k * 3);
       col.set([this.col[s], this.col[s + 1], this.col[s + 2]], k * 3);
+      part[k] = this.parts[order[k]];
     }
-    return { pos, col, anchors: this.anchors };
+    return { pos, col, anchors: this.anchors, part };
   }
 }
 
@@ -444,6 +451,119 @@ export function attention(seed = 61): Shape {
     }
   }
   b.anchors = tokens.map((t, i) => ({ p: [xs[i], 0.85, 0] as [number, number, number], r: 0.16, label: t }));
+  return b.finish();
+}
+
+/** The intro's surveyor: a small wheeled robot holding a clipboard and a pen. Built facing +z with
+ *  its wheels on the floor (y = 0). Every point carries a part id so the rig can move the parts. */
+export const PART = { body: 0, head: 1, eyes: 2, mouth: 3, antenna: 4, wheelL: 5, wheelR: 6, armL: 7, board: 8, paper: 9, armR: 10, pen: 11 } as const;
+export const RIG = {
+  neck: [0, 1.1, 0],
+  eyeY: 1.36,
+  mouthY: 1.23,
+  antenna: [0, 1.5, 0],
+  wheelL: [-0.35, 0.18, 0],
+  wheelR: [0.35, 0.18, 0],
+  wheelRadius: 0.18,
+  shoulderL: [-0.31, 0.98, 0],
+  shoulderR: [0.31, 0.98, 0],
+} as const;
+
+export function robot(seed = 89): Shape {
+  const b = new Builder(rng(seed));
+  const shell = hex('#d9dcd6');
+  const dark = hex('#6d7178');
+  const glowW = hex('#ffffff');
+  const glowH = hex('#ff6a3d');
+
+  // wheels: a rim, a hub and three spokes, so rolling reads as rolling
+  for (const [part, x] of [[PART.wheelL, RIG.wheelL[0]], [PART.wheelR, RIG.wheelR[0]]] as const) {
+    b.part = part;
+    const [, cy, cz] = RIG.wheelL;
+    for (let i = 0; i < 2000; i++) {
+      const t = b.r() * Math.PI * 2;
+      const rr = 0.18 - b.r() * 0.035;
+      b.add(x + (b.r() - 0.5) * 0.07, cy + Math.cos(t) * rr, cz + Math.sin(t) * rr, dark);
+    }
+    for (let k = 0; k < 3; k++) {
+      const t = (k / 3) * Math.PI * 2;
+      b.line([x, cy, cz], [x, cy + Math.cos(t) * 0.15, cz + Math.sin(t) * 0.15], 220, shell, 0.008);
+    }
+    b.sphere(x, cy, cz, 0.04, 200, shell);
+  }
+
+  b.part = PART.body;
+  b.box([-0.32, 0.22, -0.26], [0.32, 0.42, 0.26], 3600, dark);
+  b.box([-0.26, 0.42, -0.2], [0.26, 1.05, 0.2], 7200, shell);
+  // chest dial
+  for (let i = 0; i < 700; i++) {
+    const t = b.r() * Math.PI * 2;
+    const rr = 0.07 + b.gauss() * 0.004;
+    b.add(Math.cos(t) * rr, 0.8 + Math.sin(t) * rr, 0.205, dark);
+  }
+  b.cylinder([0, 1.03, 0], [0, 1.16, 0], 0.06, 500, dark);
+
+  b.part = PART.head;
+  b.box([-0.25, 1.15, -0.2], [0.25, 1.5, 0.2], 6200, shell);
+  // ear bolts
+  b.cylinder([-0.25, 1.33, 0], [-0.3, 1.33, 0], 0.05, 300, dark);
+  b.cylinder([0.25, 1.33, 0], [0.3, 1.33, 0], 0.05, 300, dark);
+
+  b.part = PART.eyes;
+  for (const ex of [-0.1, 0.1]) {
+    for (let i = 0; i < 750; i++) {
+      const t = b.r() * Math.PI * 2;
+      const rr = Math.sqrt(b.r()) * 0.055;
+      b.add(ex + Math.cos(t) * rr, RIG.eyeY + Math.sin(t) * rr * 1.15, 0.205, glowW, 0.02);
+    }
+  }
+
+  b.part = PART.mouth;
+  for (let k = 0; k < 6; k++) {
+    const x = -0.1 + k * 0.04;
+    b.line([x, RIG.mouthY - 0.025, 0.205], [x, RIG.mouthY + 0.025, 0.205], 110, glowH, 0.004);
+  }
+
+  b.part = PART.antenna;
+  b.line([0, 1.5, 0], [0, 1.66, 0], 260, dark, 0.006);
+  b.sphere(0, 1.68, 0, 0.035, 320, glowH);
+
+  // arms: shoulder, elbow, hand. The left holds the clipboard, the right the pen
+  const arm = (part: number, s: readonly number[], e: number[], h: number[]) => {
+    b.part = part;
+    b.sphere(s[0], s[1], s[2], 0.055, 300, dark);
+    b.cylinder(s as number[], e, 0.04, 700, shell);
+    b.sphere(e[0], e[1], e[2], 0.045, 250, dark);
+    b.cylinder(e, h, 0.035, 650, shell);
+    b.sphere(h[0], h[1], h[2], 0.05, 280, dark);
+  };
+  arm(PART.armL, RIG.shoulderL, [-0.42, 0.74, 0.06], [-0.2, 0.7, 0.3]);
+  arm(PART.armR, RIG.shoulderR, [0.42, 0.74, 0.06], [0.14, 0.8, 0.38]);
+
+  // clipboard, tilted up toward the robot's face so it can read it and we can see the paper
+  const tilt = -0.75;
+  const [cx, cy, cz] = [-0.1, 0.8, 0.36];
+  const put = (u: number, v: number, w: number, c: RGB) =>
+    b.add(cx + u, cy + v * Math.cos(tilt) - w * Math.sin(tilt), cz + v * Math.sin(tilt) + w * Math.cos(tilt), c, 0.04);
+  b.part = PART.board;
+  for (let i = 0; i < 3000; i++) put((b.r() - 0.5) * 0.32, (b.r() - 0.5) * 0.42, (b.r() - 0.5) * 0.02, dark);
+  for (let i = 0; i < 260; i++) put((b.r() - 0.5) * 0.12, 0.2 + b.r() * 0.04, 0.02, shell);
+  b.part = PART.paper;
+  for (let row = 0; row < 6; row++) {
+    const v = 0.13 - row * 0.055;
+    for (let i = 0; i < 120; i++) put(-0.06 + b.r() * 0.17, v + b.gauss() * 0.003, 0.016, glowW);
+    // a checkbox at the start of each line
+    for (let i = 0; i < 40; i++) {
+      const t = b.r() * 4;
+      const q = (t % 1) * 0.024 - 0.012;
+      const [du, dv] = t < 1 ? [q, -0.012] : t < 2 ? [q, 0.012] : t < 3 ? [-0.012, q] : [0.012, q];
+      put(-0.1 + du, v + dv, 0.016, glowW);
+    }
+  }
+
+  b.part = PART.pen;
+  b.line([0.14, 0.8, 0.38], [0.05, 0.76, 0.43], 300, glowH, 0.006);
+
   return b.finish();
 }
 
