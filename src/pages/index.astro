@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Stage from '../components/Stage.astro';
+import Intro from '../components/Intro.astro';
 import { chapters } from '../data/chapters';
 import { site, mailto } from '../lib/site';
 import { experience, education, skills } from '../data/experience';
@@ -9,6 +10,7 @@ const work = chapters.filter((c) => c.title);
 ---
 
 <Base cloud>
+  <Intro />
   <Stage chapters={chapters} fixed />
 
   <nav class="index" aria-label="Chapters">

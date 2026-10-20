@@ -5,15 +5,20 @@ import { N, type Shape } from './shapes';
 
 const VS = /* glsl */ `#version 300 es
 precision highp float;
-in vec3 aPosA; in vec3 aPosB; in vec3 aColA; in vec3 aColB; in float aRand;
+in vec3 aPosA; in vec3 aPosB; in vec3 aColA; in vec3 aColB; in float aRand; in float aPart;
 uniform mat4 uProj; uniform mat4 uView;
+// rigid parts of shape A (the intro robot): one matrix and one glow amount per part
+uniform mat4 uParts[12]; uniform float uGlow[12]; uniform float uPartsOn;
 uniform float uMorph; uniform float uTime; uniform float uIdle; uniform float uSize; uniform float uDpr;
 uniform float uNear; uniform float uFar;
-out vec3 vCol; out float vDepth; out float vFade;
+out vec3 vCol; out float vDepth; out float vFade; out float vGlow;
 void main() {
   // each point leaves at its own moment, so the cloud dissolves rather than slides
   float t = smoothstep(0.0, 1.0, clamp(uMorph * 1.7 - aRand * 0.7, 0.0, 1.0));
-  vec3 p = mix(aPosA, aPosB, t);
+  int part = int(aPart + 0.5);
+  vec3 a = uPartsOn > 0.5 ? (uParts[part] * vec4(aPosA, 1.0)).xyz : aPosA;
+  vGlow = uPartsOn > 0.5 ? uGlow[part] * (1.0 - t) : 0.0;
+  vec3 p = mix(a, aPosB, t);
   float mid = sin(t * 3.14159265);
   vec3 scatter = vec3(fract(aRand * 43.17), fract(aRand * 17.31), fract(aRand * 91.73)) - 0.5;
   p += scatter * mid * 1.1;
@@ -30,7 +35,7 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float;
-in vec3 vCol; in float vDepth; in float vFade;
+in vec3 vCol; in float vDepth; in float vFade; in float vGlow;
 uniform float uRgb;
 out vec4 outColor;
 vec3 turbo(float x) {
@@ -51,7 +56,8 @@ void main() {
   if (r > 0.25) discard;
   // near is red, far is blue; far points also dim, as a real depth frame fades out
   vec3 depthCol = turbo(1.0 - vDepth * 0.92) * (1.0 - vDepth * 0.45);
-  vec3 col = mix(depthCol, vCol, uRgb);
+  // lit parts (eyes, LEDs, paper) keep their own colour whatever the depth
+  vec3 col = mix(mix(depthCol, vCol, uRgb), vCol, vGlow);
   outColor = vec4(col, (1.0 - smoothstep(0.16, 0.25, r)) * vFade);
 }`;
 
@@ -97,6 +103,19 @@ export interface Frame {
   time: number;
   idle: number; // 0..1
   cam: Camera;
+  parts?: Float32Array; // 12 column-major mat4s for shape A's parts
+  glow?: Float32Array; // 12
+}
+
+/** Point count, pixel ratio and minimum point size for this device. The home page and the intro
+ *  share it, so the intro's last frame is drawn with exactly the points the home page starts with. */
+export function deviceCloudOpts() {
+  const small = matchMedia('(max-width: 767px)').matches;
+  // fewer points on modest hardware from the start; the home loop trims further if frames run long
+  const hw = navigator as Navigator & { deviceMemory?: number };
+  const low = (hw.hardwareConcurrency ?? 8) <= 4 || (hw.deviceMemory ?? 8) <= 3;
+  const share = low ? 0.5 : small ? 0.85 : 1;
+  return { count: Math.round(N * share), maxDpr: small || low ? 1.5 : 2, minSize: small ? 8 : 6.5 };
 }
 
 export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; maxDpr: number; minSize?: number }) {
@@ -135,6 +154,7 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
     posB: attr('aPosB', 3, null),
     colA: attr('aColA', 3, null),
     colB: attr('aColB', 3, null),
+    part: attr('aPart', 1, null),
   };
   attr('aRand', 1, rand);
 
@@ -142,6 +162,7 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
   const U = {
     proj: u('uProj'), view: u('uView'), morph: u('uMorph'), time: u('uTime'), idle: u('uIdle'),
     size: u('uSize'), dpr: u('uDpr'), near: u('uNear'), far: u('uFar'), rgb: u('uRgb'),
+    parts: u('uParts'), glow: u('uGlow'), partsOn: u('uPartsOn'),
   };
 
   gl.enable(gl.BLEND);
@@ -174,6 +195,7 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
     up(bufs.colA, a.col);
     up(bufs.posB, b.pos);
     up(bufs.colB, b.col);
+    up(bufs.part, a.part);
   }
 
   function render(f: Frame) {
@@ -200,6 +222,9 @@ export function createCloud(canvas: HTMLCanvasElement, opts: { count: number; ma
     gl!.uniform1f(U.time, f.time);
     gl!.uniform1f(U.idle, f.idle);
     gl!.uniform1f(U.rgb, f.rgb);
+    gl!.uniform1f(U.partsOn, f.parts ? 1 : 0);
+    if (f.parts) gl!.uniformMatrix4fv(U.parts, false, f.parts);
+    if (f.glow) gl!.uniform1fv(U.glow, f.glow);
     // points keep a minimum size on small screens, or the cloud turns to dust
     gl!.uniform1f(U.size, Math.max(opts.minSize ?? 6.5, (Math.min(w, 1600) / 1440) * 9.5));
     gl!.uniform1f(U.dpr, dpr);

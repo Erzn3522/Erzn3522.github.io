@@ -47,6 +47,11 @@ const { chapters, fixed = false } = Astro.props;
     opacity: 1;
   }
 
+  /* after the intro the first frame matches the intro's last one, so it appears at once */
+  .stage.is-instant canvas {
+    transition: none;
+  }
+
   .stage__labels {
     position: absolute;
     inset: 0;
