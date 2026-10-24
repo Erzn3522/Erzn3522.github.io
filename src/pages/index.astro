@@ -37,7 +37,7 @@ const work = chapters.filter((c) => c.title);
   </section>
 
   {work.map((c) => (
-    <section id={c.id} class="ch" data-chapter aria-labelledby={`${c.id}-title`}>
+    <section id={c.id} class="ch ch--work" data-chapter aria-labelledby={`${c.id}-title`}>
       <div class="card wrap">
         <div class="card__text">
           <p class="note card__when">{c.when}</p>
@@ -102,7 +102,7 @@ const work = chapters.filter((c) => c.title);
         ))}
       </p>
       <p class="note contact__foot">
-        {site.name}, {site.location}. Set in Bricolage Grotesque. Every scene on this site is generated in code; no
+        {site.name}, {site.location}. Every scene on this site is generated in code; no
         employer data or imagery.
       </p>
     </div>
@@ -113,7 +113,7 @@ const work = chapters.filter((c) => c.title);
   .ch {
     position: relative;
     z-index: 1;
-    min-height: 150vh;
+    min-height: 150svh;
     overflow-x: clip;
   }
 
@@ -121,13 +121,20 @@ const work = chapters.filter((c) => c.title);
      and leaves as the next one starts to form, the next copy right behind it */
   .card {
     position: sticky;
-    top: 48vh;
-    padding-bottom: 6vh;
+    top: 48svh;
+    padding-bottom: 6svh;
   }
 
   @media (max-width: 767px) {
+    .ch--work {
+      min-height: auto;
+      padding-block: 42svh 18svh;
+    }
+
     .card {
-      top: 40vh;
+      position: relative;
+      top: auto;
+      padding-bottom: 0;
     }
   }
 
@@ -228,7 +235,8 @@ const work = chapters.filter((c) => c.title);
     display: grid;
     justify-items: end;
     text-align: right;
-    mix-blend-mode: difference;
+    color: var(--fg);
+    text-shadow: 0 2px 18px rgb(0 0 0 / 0.85);
   }
 
   .card__num {
@@ -260,8 +268,8 @@ const work = chapters.filter((c) => c.title);
     right: var(--pad);
     top: 5.5rem;
     z-index: 30;
-    mix-blend-mode: difference;
-    color: #fff;
+    color: var(--fg);
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.95);
   }
 
   .index ol {
@@ -317,7 +325,7 @@ const work = chapters.filter((c) => c.title);
   /* ---------- The record ---------- */
   .ch--record {
     min-height: auto;
-    padding-block: 40vh 12vh;
+    padding-block: 40svh 12svh;
   }
 
   .record {
@@ -385,7 +393,7 @@ const work = chapters.filter((c) => c.title);
     display: grid;
     min-height: 100svh;
     align-content: end;
-    padding-block: 20vh 8vh;
+    padding-block: 20svh 8svh;
   }
 
   .contact__lead {
@@ -437,7 +445,13 @@ const work = chapters.filter((c) => c.title);
 
   @media (prefers-reduced-motion: reduce) {
     .ch {
-      min-height: 120vh;
+      min-height: 120svh;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+    .ch--work {
+      min-height: auto;
     }
   }
 </style>

@@ -137,11 +137,18 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
 
   // ---------- scroll → chapter ----------
   let tops: number[] = [];
+  let resizeFrame = 0;
   const measure = () => {
     tops = sections.map((s) => s.getBoundingClientRect().top + scrollY);
     cloud!.resize();
   };
-  addEventListener('resize', measure);
+  const scheduleMeasure = () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(measure);
+  };
+  // Mobile browser chrome can emit many resize events during one scroll. Coalescing them keeps
+  // canvas reallocations out of the middle of the scroll frame, where they cause visible jumps.
+  addEventListener('resize', scheduleMeasure, { passive: true });
   document.fonts?.ready.then(measure);
 
   /** index of the current chapter and how far into the move to the next one (0..1) */
@@ -184,7 +191,9 @@ export function initCloud(root: HTMLElement, chapters: Chapter[], name: string) 
       for (const { a, s } of items) {
         const el = label(used++);
         const r = s!.rpx + 6;
-        el.style.translate = `${(s!.x - r).toFixed(1)}px ${(s!.y - r).toFixed(1)}px`;
+        // Keep the label as a composited layer. Updating the independent `translate` property
+        // caused its text to be rerasterised at slightly different subpixels on every frame.
+        el.style.transform = `translate3d(${(s!.x - r).toFixed(1)}px, ${(s!.y - r).toFixed(1)}px, 0)`;
         el.style.setProperty('--size', `${(r * 2).toFixed(1)}px`);
         el.style.opacity = String(alpha);
         const text = ch.labels === 'distance' ? `${s!.dist.toFixed(2)} m` : a.label ?? '';
