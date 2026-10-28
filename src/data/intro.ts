@@ -29,7 +29,7 @@ export const questions: IntroQuestion[] = [
         tag: 'curious',
         replies: [
           'Curiosity logged. Estimated time on site: 4 minutes, give or take 3 hours.',
-          'Respect. I came here by accident too, and now I live here.',
+          'Curiosity is a good start. That is how most of my experiments begin.',
           'Curious humans are my favourite. They rarely unplug me.',
         ],
       },
@@ -38,7 +38,7 @@ export const questions: IntroQuestion[] = [
         tag: 'accidental',
         replies: [
           'Accidental click registered. My model gave this a 3% chance. Retraining.',
-          'Honestly, same. Stay a minute, there are dots.',
+          'Respect. I came here by accident too, and now I live here.',
           'There are no accidents. Only uncalibrated fingers.',
         ],
       },

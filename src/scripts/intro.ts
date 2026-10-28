@@ -23,6 +23,7 @@ const STANCE = -0.5;
 // the home page's opening view, framed exactly as scripts/cloud.ts frames it
 const HOME = chapters[0];
 const ENTER = 2.6; // seconds to roll in
+const WELCOME = 4.8; // let visitors read the engineer's introduction before Q7 arrives
 const CHAR = 0.032; // seconds per typed character
 
 type Gesture = 'tick' | 'nod' | 'tilt' | 'boing' | 'wave' | 'hop' | 'shake';
@@ -35,6 +36,7 @@ export function initIntro(root: HTMLElement) {
   const whoEl = $('[data-who]');
   const optsEl = $('[data-opts]');
   const soundBtn = $<HTMLButtonElement>('[data-sound]');
+  const welcomeEl = $('[data-welcome]');
 
   let cloud: ReturnType<typeof createCloud> = null;
   try {
@@ -67,9 +69,11 @@ export function initIntro(root: HTMLElement) {
 
   // ---------- the robot's state, advanced by the clock ----------
   const pose: Pose = restPose();
-  const startX = innerWidth / innerHeight < 0.8 ? 1.25 : 2.1; // just inside the frame edge, so the first frame is never empty
+  const startX = innerWidth / innerHeight < 0.8 ? 2.6 : 4.5;
   let clock = 0;
-  let enterAt = 0;
+  const enterAt = WELCOME;
+  let arrived: (() => void) | null = null;
+  const arrival = new Promise<void>((resolve) => { arrived = resolve; });
   let look: 'visitor' | 'clipboard' = 'visitor';
   const gestures: { g: Gesture; t0: number }[] = [];
   const gesture = (g: Gesture) => { if (!reduce.matches) gestures.push({ g, t0: clock }); };
@@ -134,6 +138,8 @@ export function initIntro(root: HTMLElement) {
   const finish = (seamless: boolean) => {
     if (ended) return;
     ended = true;
+    arrived?.();
+    arrived = null;
     const html = document.documentElement;
     const close = () => {
       running = false;
@@ -167,7 +173,8 @@ export function initIntro(root: HTMLElement) {
 
   // ---------- the conversation ----------
   async function script() {
-    await sleep(reduce.matches ? 0 : ENTER * 1000 - 300);
+    await arrival;
+    if (ended) return;
     gesture('hop');
     await say(pick(lines.hello));
     const go = await choose([lines.yes, lines.no]);
@@ -242,6 +249,22 @@ export function initIntro(root: HTMLElement) {
     last = now;
     clock += dt;
     const still = reduce.matches ? 0 : 1;
+    const entry = clock < enterAt ? 0 : reduce.matches || !cloud ? 1 : Math.min(1, (clock - enterAt) / ENTER);
+    const push = inOut(Math.max(0, Math.min(1, (entry - 0.5) / 0.45)));
+    // The same clock moves the words and the robot, so Q7 visibly shoves the intro aside.
+    if (arrived) {
+      if (clock >= enterAt) root.dataset.phase = 'enter';
+      if (!reduce.matches && cloud) {
+        welcomeEl.style.transform = `translate3d(${-push * innerWidth * 1.1}px, ${push * 18}px, 0) rotate(${-push * 5}deg)`;
+        welcomeEl.style.opacity = String(1 - Math.max(0, (push - 0.75) / 0.25));
+      }
+      if (entry >= 1) {
+        welcomeEl.hidden = true;
+        root.dataset.phase = 'talk';
+        arrived();
+        arrived = null;
+      }
+    }
 
     // typing, one key per character, a voice blip on every other letter
     if (typing.shown < typing.text.length) {
@@ -266,10 +289,10 @@ export function initIntro(root: HTMLElement) {
     }
     talk = Math.max(0.12, talk - dt * 6);
 
-    if (cloud) {
+    if (cloud && clock >= enterAt) {
       const p = restPose();
       // roll in from the side, turning to face the camera at the end
-      const e = reduce.matches ? 1 : Math.min(1, (clock - enterAt) / ENTER);
+      const e = reduce.matches ? 1 : entry;
       p.x = lerp(startX, 0, inOut(e));
       p.yaw = lerp(-Math.PI / 2, STANCE, inOut(Math.max(0, (e - 0.62) / 0.38)));
       pose.spin += (prevX - p.x) / S.RIG.wheelRadius;
@@ -291,6 +314,10 @@ export function initIntro(root: HTMLElement) {
       p.headYaw = pose.headYaw;
       p.headPitch = pose.headPitch;
       p.armL = pose.armL;
+      const shove = still * Math.sin(push * Math.PI);
+      p.armRz += shove * 1.1;
+      p.armRx += shove * 0.8;
+      p.headYaw *= 1 - shove;
 
       // blink every few seconds
       if (clock > nextBlink + 0.14) nextBlink = clock + 2.4 + Math.random() * 3;
@@ -352,7 +379,7 @@ export function initIntro(root: HTMLElement) {
     requestAnimationFrame(frame);
   }
 
-  root.dataset.phase = 'talk';
+  root.dataset.phase = 'welcome';
   requestAnimationFrame((t) => { last = t; frame(t); });
   script();
 }

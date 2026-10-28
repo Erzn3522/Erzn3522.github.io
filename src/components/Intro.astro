@@ -1,6 +1,7 @@
 ---
 // Q7's survey, laid over the home page on every visit (a #chapter link skips it). It ends on the
 // home page's own first frame and hands the cloud over, so the orchard never cuts.
+import { site } from '../lib/site';
 ---
 
 <script is:inline>
@@ -14,8 +15,12 @@
   })();
 </script>
 
-<section class="intro" data-survey data-phase="talk" aria-label="A short survey before the portfolio">
+<section class="intro" data-survey data-phase="welcome" aria-label="Introduction and optional robot survey">
   <canvas class="intro__canvas" data-intro-canvas aria-hidden="true"></canvas>
+
+  <div class="intro__welcome" data-welcome>
+    <p class="intro__bio">I'm <span>{site.name}</span>, a Computer Vision &amp; Machine Learning Engineer transforming AI models into production-ready solutions.</p>
+  </div>
 
   <div class="intro__sub">
     <p class="intro__line" aria-live="polite">
@@ -98,6 +103,45 @@
 
   :global(.no-gl) .intro__canvas {
     display: none;
+  }
+
+  .intro__welcome {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 6rem var(--pad);
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .intro__bio {
+    width: min(100%, 24ch);
+    font-size: clamp(2rem, 1rem + 3.6vw, 4.8rem);
+    font-stretch: 75%;
+    font-weight: 650;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    animation: bio-in 0.65s ease-out both;
+  }
+
+  .intro__bio span {
+    color: var(--hot);
+  }
+
+  .intro__welcome[hidden] {
+    display: none;
+  }
+
+  @keyframes bio-in {
+    from { opacity: 0; translate: 0 0.6rem; }
+    to { opacity: 1; translate: 0 0; }
+  }
+
+  .intro[data-phase='welcome'] .intro__sub,
+  .intro[data-phase='enter'] .intro__sub {
+    visibility: hidden;
   }
 
   /* subtitles: film style, centred, on a scrim so they read over any point */
@@ -264,6 +308,11 @@
 
   .intro__skip {
     right: var(--pad);
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--fg);
+    background: var(--bg);
   }
 
   @media (hover: hover) {
@@ -288,16 +337,15 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .intro__bio {
+      animation: none;
+    }
     .intro__opts :global(.intro__opt) {
       animation: none;
     }
-    .intro.is-gone {
-    opacity: 0;
-    transition: opacity 0.7s;
-  }
-
-  .intro[data-phase='leave'] .intro__sub,
-  .intro[data-phase='leave'] .intro__corner {
+    .intro.is-gone,
+    .intro[data-phase='leave'] .intro__sub,
+    .intro[data-phase='leave'] .intro__corner {
       transition: none;
     }
   }
